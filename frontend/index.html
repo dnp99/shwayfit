@@ -7,6 +7,18 @@
     <meta name="theme-color" content="#254e43" />
     <meta name="description" content="ShwayFit is a phone-first client-management app for independent fitness trainers." />
     <title>ShwayFit — Your clients, sessions, and plans</title>
+    <script>
+      (() => {
+        try {
+          const preference = localStorage.getItem('shwayfit-theme-preference') || 'system'
+          document.documentElement.dataset.theme = preference === 'system'
+            ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+            : preference
+        } catch {
+          document.documentElement.dataset.theme = 'light'
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

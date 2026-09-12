@@ -22,8 +22,7 @@
   --agenda-note: #91ADA2;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
+:root[data-theme='dark'] {
     --background: #0F1412;
     --foreground: #F2F5F3;
     --card: #151B18;
@@ -44,7 +43,6 @@
     --agenda-line: #4D6259;
     --agenda-muted: #CFE2DA;
     --agenda-note: #A8C1B6;
-  }
 }
 
 .site-shell { max-width: 1240px; margin: auto; padding: 22px 20px 30px; }
@@ -54,6 +52,11 @@
 nav { display: flex; gap: 18px; }
 nav a { color: var(--foreground); font-size: 12px; text-decoration: none; }
 nav a:hover { color: var(--primary); text-decoration: underline; text-underline-offset: 4px; }
+.theme-select { appearance: none; background: var(--secondary); border: 1px solid var(--border); border-radius: 8px; color: var(--foreground); cursor: pointer; font: inherit; font-size: 12px; min-height: 32px; padding: 0 24px 0 10px; }
+.theme-select-label { position: relative; }
+.theme-select-label::after { color: var(--muted-foreground); content: '⌄'; font-size: 14px; pointer-events: none; position: absolute; right: 8px; top: 5px; }
+.theme-select:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+.visually-hidden { clip: rect(0 0 0 0); clip-path: inset(50%); height: 1px; overflow: hidden; position: absolute; white-space: nowrap; width: 1px; }
 .hero { display: grid; gap: 44px; padding: 72px 0 66px; }
 .eyebrow { color: var(--secondary-foreground); font-size: 10px; font-weight: 600; letter-spacing: 1.75px; line-height: 1.7; margin: 0; }
 h1, h2, h3, p { margin-top: 0; }
@@ -89,6 +92,7 @@ footer .brand { font-size: 18px; }
 footer .brand-mark { border-radius: 8px; font-size: 23px; height: 28px; width: 28px; }
 footer p { color: var(--muted-foreground); font-size: 11px; margin: 0; }
 .sign-in-page { background: var(--background); min-height: 100vh; padding: 2rem clamp(1.25rem, 6vw, 7rem); }
+.sign-in-header { align-items: center; display: flex; justify-content: space-between; }
 .sign-in-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; color: var(--card-foreground); margin: clamp(5rem, 14vh, 10rem) auto; padding: 2rem; width: min(100%, 29rem); }
 .sign-in-card h1 { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(2.3rem, 7vw, 3.4rem); line-height: .98; margin: .75rem 0 1rem; }
 .sign-in-card p { color: var(--muted-foreground); line-height: 1.6; }
@@ -107,4 +111,9 @@ footer p { color: var(--muted-foreground); font-size: 11px; margin: 0; }
   .pilot { grid-template-columns: 1.15fr .85fr; padding: 52px; }
   .pilot-copy { gap: 20px; }
   footer { align-items: center; flex-direction: row; justify-content: space-between; }
+}
+
+@media (max-width: 520px) {
+  nav { gap: 10px; }
+  nav a[href='#how-it-helps'], nav a[href='#pilot'] { display: none; }
 }

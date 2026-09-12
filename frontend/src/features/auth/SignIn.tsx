@@ -1,5 +1,6 @@
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import { useState } from 'react'
+import { ThemeSelect } from '../../components/ThemeSelect'
 import { getFirebaseAuth } from '../../lib/firebase'
 
 type Identity = {
@@ -35,7 +36,10 @@ export function SignIn() {
 
   return (
     <main className="sign-in-page">
-      <a className="brand" href="/" aria-label="ShwayFit home"><span className="brand-mark" aria-hidden="true">s</span><span>ShwayFit</span></a>
+      <header className="sign-in-header">
+        <a className="brand" href="/" aria-label="ShwayFit home"><span className="brand-mark" aria-hidden="true">s</span><span>ShwayFit</span></a>
+        <ThemeSelect />
+      </header>
       <section className="sign-in-card" aria-labelledby="sign-in-title">
         <p className="eyebrow">TRAINER ACCESS</p>
         <h1 id="sign-in-title">Welcome to ShwayFit</h1>

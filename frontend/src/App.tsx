@@ -1,4 +1,5 @@
 import './App.css'
+import { ThemeSelect } from './components/ThemeSelect'
 import { SignIn } from './features/auth/SignIn'
 
 const features = [
@@ -16,7 +17,7 @@ function App() {
     <div className="site-shell">
       <header className="site-header">
         <a className="brand" href="#top" aria-label="ShwayFit home"><span className="brand-mark" aria-hidden="true">s</span><span>ShwayFit</span></a>
-        <nav aria-label="Main navigation"><a href="#how-it-helps">How it helps</a><a href="#pilot">The pilot</a><a href="/sign-in">Sign in</a></nav>
+        <nav aria-label="Main navigation"><a href="#how-it-helps">How it helps</a><a href="#pilot">The pilot</a><a href="/sign-in">Sign in</a><ThemeSelect /></nav>
       </header>
       <main id="top">
         <section className="hero" aria-labelledby="hero-title">
