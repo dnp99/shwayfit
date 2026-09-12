@@ -22,10 +22,19 @@ Shared endpoint contracts will live in [`../shared/contracts/`](../shared/contra
 
 ## `GET /api/v1/me`
 
-Requires `Authorization: Bearer <Firebase ID token>`. The API verifies the token and returns the authenticated Firebase identity. It does not authorize any organization data; future business endpoints must also enforce membership, role, and client assignment.
+Requires `Authorization: Bearer <Firebase ID token>`. The API verifies the token and returns the authenticated Firebase identity. It does not itself authorize organization data; the organization and client endpoints below enforce membership, role, and client assignment.
 
-## Next contract, not yet implemented
+## Organization and client records
 
-Business endpoints will live under `/api/v1/organizations/{organizationId}/...`. The backend must verify Firebase ID tokens, active organization membership, membership role, and client assignment on every business operation. A path identifier or frontend-selected organization never proves access. Owner status does not implicitly grant access to another trainer's clients.
+The POC has a one-time, authenticated organization bootstrap: `POST /api/v1/organizations` accepts a 2–80-character business name and creates the caller's organization plus an active `owner` membership. A caller with a membership receives `409 organization_already_exists` rather than being able to create another organization.
 
-Before adding business routes: choose the initial sign-in/provisioning approach, define a common JSON error contract, bound request sizes and queries, and add negative authorization tests. Future native apps use the same REST API.
+`GET /api/v1/organizations/current` returns the organization attached to the verified identity. Client routes deliberately use `current`, rather than accepting an organization ID from the browser:
+
+- `GET /api/v1/organizations/current/clients`
+- `POST /api/v1/organizations/current/clients`
+- `GET /api/v1/organizations/current/clients/{clientID}`
+- `PATCH /api/v1/organizations/current/clients/{clientID}`
+
+The API bounds JSON requests to 64 KiB, rejects unknown fields, and returns the common JSON error shape. First and last name are required. Email, phone, goals, and private notes are optional; client status is `active` or `archived`. Delete is intentionally not available.
+
+The verified Firebase identity is mapped to `trainerMemberships/{uid}`. Client data is stored at `organizations/{organizationId}/clients/{clientId}` and includes an assigned trainer UID. Each route checks active membership and role; non-owner trainers are limited to records assigned to their UID. Browser Firestore access remains denied, including to memberships and client contact details.

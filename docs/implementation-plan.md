@@ -6,7 +6,7 @@ On September 10, 2026, the local checkout and `git ls-remote origin` showed no t
 
 The user's request governs implementation. BRD v0.2 is a draft requirement source; proposed defaults remain proposals. The supplied Markdown BRD, PDF BRD, and proposal were copied unchanged into this directory. The removed introductory registrar and pending-domain lines remain absent. Historical mentions elsewhere in the original documents are preserved as supplied.
 
-The future authenticated frontend will use Tailwind CSS, shadcn/ui, semantic CSS tokens, and System/Light/Dark mode. See [Frontend design system direction](frontend-design-system.md).
+The authenticated frontend uses Tailwind CSS, shadcn/ui, semantic CSS tokens, and System/Light/Dark mode. See [Frontend design system direction](frontend-design-system.md).
 
 ## 1. Local foundation (implemented)
 
@@ -34,13 +34,12 @@ Resend is not configured.
 - The API verifies the token using the Firebase Admin SDK. A verified identity does not by itself grant access to organization data.
 - `localhost`, `shwayfit.app`, and `shwayfit-f7f0b.web.app` are authorized for Google sign-in.
 
-## 3. Organization authorization and first client (next)
+## 3. Organization authorization and first client (implemented)
 
-Create the first organization and active `owner` membership for the existing trainer account. There is no public registration, invitation, or organization-management screen in the POC.
-
-Build organization-owned collections and membership role checks. Keep business access in the Go API and browser Firestore access denied. Every business endpoint verifies identity, active membership, permitted role, and client assignment. Add negative tests for cross-organization access and same-organization, unassigned clients.
-
-Agree the required client fields before building forms. Then implement create, list, detail, and edit. Defer archive/delete behavior until the retention rule is agreed. Add a local Firestore-emulator workflow and a seed command for two organizations and test identities.
+- The first signed-in trainer can create one organization and active `owner` membership. There is no public registration, invitation, or organization-management screen in the POC.
+- Membership and clients are organization-scoped in Firestore. The Go API checks identity, active membership, role, and trainer assignment before every client operation; browser Firestore access remains denied.
+- Client create, list, detail, and edit are available through the authenticated workspace. First and last name are required; email, phone, goals, and private notes are optional. Clients can be active or archived. Delete is deferred until a retention rule is agreed.
+- Focused negative tests cover an unassigned same-organization trainer. The local Firestore Emulator seed command creates two fictional organizations and identities for isolation testing.
 
 ## 4. First complete flow
 

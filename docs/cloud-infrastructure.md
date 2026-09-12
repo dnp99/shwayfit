@@ -6,10 +6,10 @@ ShwayFit uses the Google Cloud project `shwayfit-f7f0b`. It is separate from Rou
 
 | Service | Configuration | Purpose |
 | --- | --- | --- |
-| Firebase Hosting | `https://shwayfit-f7f0b.web.app` | Hosts the React/Vite frontend. Requests to `/api/**` are forwarded to Cloud Run. |
+| Firebase Hosting | `https://shwayfit.app` and `https://shwayfit-f7f0b.web.app` | Hosts the React/Vite frontend. Requests to `/api/**` are forwarded to Cloud Run. |
 | Cloud Run | `shwayfit-api`, `northamerica-northeast1` | Runs the Go REST API. It scales to zero when idle and is limited to one instance for the POC. |
-| Cloud Firestore | `(default)`, `northamerica-northeast1` | Stores ShwayFit business data. Browser access is denied; the Go API will access it with server credentials. |
-| Firebase Authentication | Not configured in the app yet | Will authenticate trainers and supply the ID tokens verified by the Go API. |
+| Cloud Firestore | `(default)`, `northamerica-northeast1` | Stores ShwayFit business data. Browser access is denied; the Go API accesses it with Cloud Run credentials. |
+| Firebase Authentication | Google sign-in | Authenticates trainers and supplies ID tokens verified by the Go API. |
 
 The public health endpoint is available at:
 
@@ -26,7 +26,7 @@ https://shwayfit-f7f0b.web.app/api/v1/health
 | A | blank (root) | `199.36.158.100` |
 | TXT | blank (root) | `hosting-site=shwayfit-f7f0b` |
 
-The TXT record verifies domain ownership for Firebase Hosting and should remain in DNS. Firebase must complete verification and issue the TLS certificate before `https://shwayfit.app` becomes live.
+The Firebase TXT record verifies domain ownership and should remain in DNS. `https://shwayfit.app` is connected and serving the application. A separate Google Search Console TXT record verifies ownership for OAuth branding and should also remain in DNS.
 
 ## Cost controls
 
@@ -34,9 +34,8 @@ The TXT record verifies domain ownership for Firebase Hosting and should remain 
 - A monthly **CAD $10** Cloud Billing budget applies only to `shwayfit-f7f0b` and alerts billing-account recipients when current spend reaches the budget.
 - The budget is a notification, not a hard cap. It does not automatically stop services.
 
-## Next setup work
+## Next infrastructure work
 
-1. Wait for Firebase to verify `shwayfit.app` and mint its TLS certificate.
-2. Configure Firebase Authentication for trainer sign-in.
-3. Create a dedicated Cloud Run runtime service account with the smallest Firestore permissions needed, before business data access is added.
-4. Add the first authenticated API flow: trainer sign-in, create a client, add a session package, book an appointment, and complete it.
+1. Replace the default Cloud Run runtime identity with a dedicated service account holding only the Firestore permissions the API needs.
+2. Complete Google OAuth branding verification for the ShwayFit name, custom domain, privacy page, and logo.
+3. Deploy the organization/client API revision to Cloud Run after its feature branch is merged.

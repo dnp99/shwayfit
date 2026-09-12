@@ -6,11 +6,13 @@ import (
 	"net/http"
 
 	"github.com/dnp99/shwayfit/backend/internal/authn"
+	"github.com/dnp99/shwayfit/backend/internal/organization"
 )
 
 // Config provides infrastructure dependencies to the HTTP boundary.
 type Config struct {
-	TokenVerifier authn.Verifier
+	TokenVerifier       authn.Verifier
+	OrganizationService *organization.Service
 }
 
 // NewHandler creates an isolated router so tests don't share global state.
@@ -38,5 +40,8 @@ func NewHandler(config ...Config) http.Handler {
 			EmailVerified bool   `json:"emailVerified"`
 		}{UID: identity.UID, Email: identity.Email, EmailVerified: identity.EmailVerified})
 	})))
+	if dependencies.OrganizationService != nil {
+		registerOrganizationRoutes(mux, dependencies.TokenVerifier, dependencies.OrganizationService)
+	}
 	return mux
 }

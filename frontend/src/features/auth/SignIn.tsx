@@ -1,6 +1,7 @@
 import { getRedirectResult, GoogleAuthProvider, signInWithPopup, signInWithRedirect } from 'firebase/auth'
 import { useEffect, useState } from 'react'
 import { ThemeToggle } from '../../components/ThemeToggle'
+import { TrainerWorkspace } from '../clients/TrainerWorkspace'
 import { getFirebaseAuth } from '../../lib/firebase'
 
 type Identity = {
@@ -63,6 +64,8 @@ export function SignIn() {
     }
   }
 
+  if (identity) return <TrainerWorkspace email={identity.email} />
+
   return (
     <main className="sign-in-page">
       <header className="sign-in-header">
@@ -72,9 +75,7 @@ export function SignIn() {
       <section className="sign-in-card" aria-labelledby="sign-in-title">
         <p className="eyebrow">TRAINER ACCESS</p>
         <h1 id="sign-in-title">Welcome to ShwayFit</h1>
-        {identity ? (
-          <p>You are signed in as <strong>{identity.email}</strong>. Trainer access will be available once your organization is set up.</p>
-        ) : isCheckingRedirect ? (
+        {isCheckingRedirect ? (
           <p>Checking your sign-in…</p>
         ) : (
           <>

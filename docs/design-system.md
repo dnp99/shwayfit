@@ -67,11 +67,11 @@ Dark mode is independently designed. It uses layered neutral green-charcoal surf
 
 ## Styling and components
 
-Use semantic Tailwind classes such as `bg-background`, `text-foreground`, `bg-card`, `text-card-foreground`, `bg-primary`, `text-primary-foreground`, `bg-secondary`, `text-secondary-foreground`, `bg-muted`, `text-muted-foreground`, `bg-accent`, `text-accent-foreground`, `border-border`, and `ring-ring`.
+Use semantic Tailwind classes such as `bg-background`, `text-foreground`, `bg-card`, `text-card-foreground`, `bg-primary`, `text-primary-foreground`, `bg-secondary`, `text-secondary-foreground`, `bg-muted`, `text-muted-foreground`, `bg-accent`, `text-accent-foreground`, `border-border`, and `ring-ring`. Tailwind v4 is integrated with the Vite plugin and maps these names directly to the CSS theme variables in `src/index.css`.
 
 Do not introduce component-level values such as `bg-[#205548]`, `text-[#68746e]`, or `dark:bg-[#151b18]`. Raw values are acceptable when defining the theme or for a documented special-purpose visualization. Lime (`#C6D978`) is for small active indicators, goals, progress, logo detail, current-time markers, and chart highlights; it is not a normal primary button, body-text, form, navigation, or large-background colour.
 
-Prefer shadcn/ui primitives for generic controls: Button, Card, Badge, Input, Textarea, Select, Dialog, Drawer, Sheet, Tabs, Tooltip, Popover, Calendar, Table, Avatar, Separator, Progress, Skeleton, Sidebar, and Sonner. Keep generic primitives in `frontend/src/components/ui/` and compose them into domain components in `frontend/src/components/`, such as `ClientCard`, `SessionCard`, `WorkoutCard`, `StatusBadge`, `PageHeader`, and `MobileBottomNav`.
+Prefer shadcn/ui primitives for generic controls: Button, Card, Badge, Input, Textarea, Select, Dialog, Drawer, Sheet, Tabs, Tooltip, Popover, Calendar, Table, Avatar, Separator, Progress, Skeleton, Sidebar, and Sonner. Keep generic primitives in `frontend/src/components/ui/` and compose them into domain components in `frontend/src/components/`, such as `ClientCard`, `SessionCard`, `WorkoutCard`, `StatusBadge`, `PageHeader`, and `MobileBottomNav`. The official shadcn CLI is configured in `frontend/components.json`; use `npx shadcn@latest add <component>` from the frontend directory to add future primitives. Button, Card, Input, Textarea, and Label are generated shadcn components.
 
 ## Typography, spacing, and shape
 
@@ -86,6 +86,8 @@ Prefer borders over shadows. Normal cards use a subtle border and no shadow; ele
 ShwayFit is phone-first. Do not merely shrink desktop layouts. Tables become cards or list rows on narrow screens, desktop sidebars become mobile-appropriate navigation, and ordinary workflows must not require horizontal scrolling. Important mobile controls need approximately 44px touch targets.
 
 Design dark mode, keyboard focus, contrast, reduced motion, and icon labels intentionally. Status must not rely on colour alone. Prefer restrained `transition-colors duration-150` motion; avoid gratuitous spring animation.
+
+All enabled buttons use the pointer cursor. Disabled buttons retain their unavailable or in-progress cursor so their state remains clear.
 
 ## Navigation, data displays, and status
 
