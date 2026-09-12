@@ -1,5 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" role="img" aria-labelledby="title">
-  <title>ShwayFit</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" role="img" aria-labelledby="title description">
+  <title id="title">ShwayFit</title>
+  <desc id="description">A moving path forming the ShwayFit mark</desc>
   <rect width="120" height="120" rx="30" fill="#205548"/>
-  <text x="60" y="85" text-anchor="middle" font-family="Georgia, serif" font-size="88" fill="#C6D978">S</text>
+  <path d="M31 43c8-16 29-21 45-11 8 5 13 13 14 23" fill="none" stroke="#C6D978" stroke-linecap="round" stroke-width="9"/>
+  <path d="M89 77c-8 16-29 21-45 11-8-5-13-13-14-23" fill="none" stroke="#8BC5AD" stroke-linecap="round" stroke-width="9"/>
+  <circle cx="31" cy="70" r="6" fill="#C6D978"/>
+  <circle cx="89" cy="50" r="6" fill="#8BC5AD"/>
+  <text x="60" y="106" fill="#F7F6F0" font-family="Arial, sans-serif" font-size="13" font-weight="700" text-anchor="middle">ShwayFit</text>
 </svg>
