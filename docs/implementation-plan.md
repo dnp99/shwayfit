@@ -22,28 +22,37 @@ The future authenticated frontend will use Tailwind CSS, shadcn/ui, semantic CSS
 - Firebase Hosting serves the React landing page and proxies `/api/**` to Cloud Run.
 - Cloud Run service: `shwayfit-api` in `northamerica-northeast1`, scale-to-zero, one instance maximum, 256 MiB memory, 1 CPU, and a 30-second request timeout.
 - The Routefy billing account is linked to the ShwayFit project as a billing source only.
+- A project-only CAD 10 monthly budget alert is configured.
+- `shwayfit.app` is connected to Firebase Hosting and serves the landing page and API health check.
 
-`shwayfit.app` has been added to Firebase Hosting; it awaits the Porkbun DNS records Firebase supplied. Resend and Firebase Authentication are not configured.
+Resend is not configured.
 
-## 2. Sign-in and first client
+## 2. Authentication (implemented)
 
-First decide sign-in and initial provisioning: recommendation for review is Google sign-in with a manually provisioned owner membership, no public registration. Also agree required client fields before building forms. These are not approved choices.
+- Firebase Authentication uses Google sign-in only; email/password, phone authentication, and client login are not enabled.
+- The sign-in page obtains a Firebase ID token and calls the Go API's authenticated `GET /api/v1/me` endpoint.
+- The API verifies the token using the Firebase Admin SDK. A verified identity does not by itself grant access to organization data.
+- `localhost`, `shwayfit.app`, and `shwayfit-f7f0b.web.app` are authorized for Google sign-in.
 
-Use Firebase Authentication and Firestore emulators with an isolated demo project for local work. Add a seed command for two organizations and test identities. The dedicated Firebase/GCP project and Canadian deployment region are now selected.
+## 3. Organization authorization and first client (next)
 
-Design organization-owned collections and membership roles from the start. Keep business access in the Go API; browser Firestore access should be denied. Verify identity, active membership, permitted role, and assigned trainer. Include cross-organization and same-organization/unassigned-client negative tests. Implement create/list/detail/edit after field validation is agreed; defer archive/delete until retention is decided.
+Create the first organization and active `owner` membership for the existing trainer account. There is no public registration, invitation, or organization-management screen in the POC.
 
-## 3. First complete flow
+Build organization-owned collections and membership role checks. Keep business access in the Go API and browser Firestore access denied. Every business endpoint verifies identity, active membership, permitted role, and client assignment. Add negative tests for cross-organization access and same-organization, unassigned clients.
+
+Agree the required client fields before building forms. Then implement create, list, detail, and edit. Defer archive/delete behavior until the retention rule is agreed. Add a local Firestore-emulator workflow and a seed command for two organizations and test identities.
+
+## 4. First complete flow
 
 Trainer sign-in → create client → record package with opening usage → book appointment → complete session.
 
 Resolve charging point, zero-balance behavior, multiple packages/allocation/expiry, timezone, duration, and overlap policy before affected behavior is built. Implement package/session events with Firestore transactions: status change, package accounting, and immutable audit event must commit together. Use a stable operation identity and transaction-safe callback; never send email inside a transaction. Verify simultaneous completion, repeated requests, and traceable corrections. Cancellation/no-show accounting requires its own policy decision.
 
-## 4. Trainer evaluation
+## 5. Trainer evaluation
 
 Add phone agenda/calendar, history pagination, workout plans, and agreed progress fields. Decide archive rules. Then implement reminders through Resend, after deciding timing and late-booking behavior. Recheck allowance before launch; record retries, delivery failures, quota blocks, cancellation/reschedule eligibility, and duplicate prevention. Reminder emails explain that replies are not monitored and tell clients to contact their trainer directly. No Reply-To header or inbound mailbox.
 
-Complete the Porkbun DNS verification for `shwayfit.app`. Confirm an operating budget and backup/restore expectations before storing live client records. Do not assume free allowances imply zero cost.
+Confirm backup/restore expectations before storing live client records. Do not assume free allowances imply zero cost.
 
 ## Go choices
 
@@ -63,4 +72,4 @@ The scaffold uses the versions resolved in `frontend/package-lock.json`; it does
 
 ## Foundation verification
 
-Passed with Go 1.27.1 and Node 20.20.1: Go race-enabled tests, go vet, backend binary build, frontend lint, and TypeScript/Vite production build. npm reported zero known vulnerabilities at installation. Browser verification covered 390px phone and 1280px desktop layouts, real proxy connectivity, API unavailable after shutdown, and successful retry after restart. Supplied document copies were byte-compared with their originals.
+Passed with Go 1.27.1 and Node 20.20.1: Go race-enabled tests, go vet, backend binary build, frontend lint, and TypeScript/Vite production build. Browser verification covered 390px phone and 1280px desktop layouts, real proxy connectivity, API unavailable after shutdown, successful retry after restart, and Google sign-in followed by a verified `/api/v1/me` request. Supplied document copies were byte-compared with their originals.
