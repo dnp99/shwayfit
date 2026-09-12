@@ -90,6 +90,8 @@ footer { align-items: flex-start; border-top: 1px solid var(--border); display: 
 footer .brand { font-size: 18px; }
 footer .brand-mark { border-radius: 8px; font-size: 23px; height: 28px; width: 28px; }
 footer p { color: var(--muted-foreground); font-size: 11px; margin: 0; }
+.footer-link { color: var(--muted-foreground); font-size: 11px; text-decoration: none; }
+.footer-link:hover { color: var(--foreground); text-decoration: underline; text-underline-offset: 3px; }
 .sign-in-page { background: var(--background); min-height: 100vh; padding: 2rem clamp(1.25rem, 6vw, 7rem); }
 .sign-in-header { align-items: center; display: flex; justify-content: space-between; }
 .sign-in-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; color: var(--card-foreground); margin: clamp(5rem, 14vh, 10rem) auto; padding: 2rem; width: min(100%, 29rem); }
@@ -98,6 +100,14 @@ footer p { color: var(--muted-foreground); font-size: 11px; margin: 0; }
 .sign-in-card .button { cursor: pointer; font: inherit; margin-top: 1rem; }
 .sign-in-card .button:disabled { cursor: wait; opacity: .7; }
 .sign-in-error { color: var(--destructive) !important; }
+.legal-page { background: var(--background); color: var(--foreground); min-height: 100vh; padding: 2rem clamp(1.25rem, 6vw, 7rem) 5rem; }
+.legal-header { border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; }
+.legal-content { margin: 4rem auto 0; max-width: 44rem; }
+.legal-content h1 { font-size: clamp(2.8rem, 8vw, 4.5rem); margin: .75rem 0 1rem; }
+.legal-content h2 { font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 1.15rem; font-weight: 600; letter-spacing: -.02em; margin: 2.5rem 0 .75rem; }
+.legal-content p { color: var(--muted-foreground); font-size: 1rem; line-height: 1.75; }
+.legal-content a { color: var(--primary); text-underline-offset: 3px; }
+.legal-updated { font-size: .875rem !important; }
 
 @media (min-width: 740px) {
   .site-shell { padding: 33px 52px 34px; }

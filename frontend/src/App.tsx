@@ -1,6 +1,7 @@
 import './App.css'
 import { ThemeToggle } from './components/ThemeToggle'
 import { SignIn } from './features/auth/SignIn'
+import { Privacy } from './features/legal/Privacy'
 
 const features = [
   ['01', 'Plan your day', 'See today at a glance, book sessions, and keep every change in one calendar.'],
@@ -11,6 +12,10 @@ const features = [
 function App() {
   if (window.location.pathname === '/sign-in') {
     return <SignIn />
+  }
+
+  if (window.location.pathname === '/privacy') {
+    return <Privacy />
   }
 
   return (
@@ -46,7 +51,7 @@ function App() {
           <div className="pilot-copy"><p>ShwayFit is being shaped around one trainer’s real workflow, from the first client record to the last session of the day. It will work beautifully on a phone and feel at home on a laptop.</p><p>Client access, payments, photo storage, external calendar sync, and SMS are planned for later. The first version focuses on the work that happens between you and your clients.</p></div>
         </section>
       </main>
-      <footer><a className="brand" href="#top"><span className="brand-mark" aria-hidden="true">s</span><span>ShwayFit</span></a><p>Built with care. One step at a time.</p><p>© {new Date().getFullYear()} ShwayFit</p></footer>
+      <footer><a className="brand" href="#top"><span className="brand-mark" aria-hidden="true">s</span><span>ShwayFit</span></a><p>Built with care. One step at a time.</p><a className="footer-link" href="/privacy">Privacy</a><p>© {new Date().getFullYear()} ShwayFit</p></footer>
     </div>
   )
 }
