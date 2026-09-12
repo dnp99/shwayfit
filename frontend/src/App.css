@@ -120,6 +120,8 @@ footer p { color: var(--muted-foreground); font-size: 11px; margin: 0; }
   .pilot { grid-template-columns: 1.15fr .85fr; padding: 52px; }
   .pilot-copy { gap: 20px; }
   footer { align-items: center; flex-direction: row; justify-content: space-between; }
+  .workspace-grid { grid-template-columns: minmax(18rem, .75fr) minmax(25rem, 1.25fr); }
+  .form-row { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 520px) {

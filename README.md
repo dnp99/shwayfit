@@ -4,7 +4,7 @@ A mobile-first client-management app for independent fitness trainers.
 
 ## Current milestone
 
-Public landing page and API foundation: separate React + TypeScript/Vite frontend and Go REST API. Firebase Hosting serves the landing page and proxies `/api/**` to Cloud Run. Firestore is provisioned with browser access denied. Authentication and business workflows are not implemented yet.
+Firebase Hosting serves the React application and proxies `/api/**` to Cloud Run. Trainers sign in with Google, create their first organization, and manage organization-scoped client records through the Go API. Firestore browser access is denied.
 
 ## Run locally
 
@@ -39,6 +39,21 @@ Go was absent on the initial development machine. A checksum-verified official d
 
 ```sh
 export PATH="$HOME/.local/share/shwayfit-tools/go/bin:$PATH"
+```
+
+### Firestore Emulator
+
+Business-data development uses the Firestore Emulator; do not seed the live project. Start it in one terminal:
+
+```sh
+npx -y firebase-tools@latest emulators:start --only firestore --project shwayfit-f7f0b
+```
+
+The emulator normally uses port 8080, so run the API on 8081 and point Vite's `API_PROXY_TARGET` at `http://127.0.0.1:8081` in `frontend/.env.local`. In another terminal, set `FIRESTORE_EMULATOR_HOST=127.0.0.1:8080` before starting the API. To add two isolated fictional organizations and trainer IDs, run:
+
+```sh
+cd backend
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 go run ./cmd/seed
 ```
 
 ### Configuration

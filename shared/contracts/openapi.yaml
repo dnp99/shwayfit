@@ -27,6 +27,108 @@ paths:
                 $ref: '#/components/schemas/Identity'
         '401':
           $ref: '#/components/responses/Unauthenticated'
+  /organizations:
+    post:
+      operationId: createFirstOrganization
+      summary: Creates the caller's only POC organization and owner membership.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [displayName]
+              properties:
+                displayName:
+                  type: string
+                  minLength: 2
+                  maxLength: 80
+      responses:
+        '201':
+          description: Organization created.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Organization' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '409': { $ref: '#/components/responses/OrganizationAlreadyExists' }
+  /organizations/current:
+    get:
+      operationId: getCurrentOrganization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The caller's active organization.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Organization' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/OrganizationNotFound' }
+  /organizations/current/clients:
+    get:
+      operationId: listClients
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Clients the caller is assigned to access.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [clients]
+                properties:
+                  clients:
+                    type: array
+                    items: { $ref: '#/components/schemas/Client' }
+    post:
+      operationId: createClient
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClientInput' }
+      responses:
+        '201':
+          description: Client created.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Client' }
+  /organizations/current/clients/{clientID}:
+    parameters:
+      - name: clientID
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getClient
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Client record.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Client' }
+    patch:
+      operationId: updateClient
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClientInput' }
+      responses:
+        '200':
+          description: Client updated.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Client' }
 components:
   securitySchemes:
     bearerAuth:
@@ -45,6 +147,30 @@ components:
           format: email
         emailVerified:
           type: boolean
+    Organization:
+      type: object
+      required: [id, displayName]
+      properties:
+        id: { type: string }
+        displayName: { type: string }
+    ClientInput:
+      type: object
+      required: [firstName, lastName, status]
+      properties:
+        firstName: { type: string, minLength: 1, maxLength: 80 }
+        lastName: { type: string, minLength: 1, maxLength: 80 }
+        email: { type: string, format: email, maxLength: 254 }
+        phone: { type: string, maxLength: 40 }
+        goals: { type: string, maxLength: 2000 }
+        notes: { type: string, maxLength: 4000 }
+        status: { type: string, enum: [active, archived] }
+    Client:
+      allOf:
+        - $ref: '#/components/schemas/ClientInput'
+        - type: object
+          required: [id]
+          properties:
+            id: { type: string }
     Error:
       type: object
       required: [error]
@@ -61,6 +187,16 @@ components:
     Unauthenticated:
       description: A valid Firebase ID token was not supplied.
       content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    OrganizationNotFound:
+      description: The caller does not have an active organization membership.
+      content:
         application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
+          schema: { $ref: '#/components/schemas/Error' }
+    OrganizationAlreadyExists:
+      description: The caller has already completed POC organization provisioning.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }

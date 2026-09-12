@@ -14,6 +14,7 @@ import (
 
 	"github.com/dnp99/shwayfit/backend/internal/authn"
 	"github.com/dnp99/shwayfit/backend/internal/httpapi"
+	"github.com/dnp99/shwayfit/backend/internal/organization"
 )
 
 func main() {
@@ -45,8 +46,16 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	store, err := organization.NewFirestoreStore(context.Background(), projectID)
+	if err != nil {
+		return err
+	}
+	defer store.Close()
 	server := &http.Server{
-		Addr: net.JoinHostPort(host, port), Handler: httpapi.NewHandler(httpapi.Config{TokenVerifier: verifier}),
+		Addr: net.JoinHostPort(host, port), Handler: httpapi.NewHandler(httpapi.Config{
+			TokenVerifier:       verifier,
+			OrganizationService: organization.NewService(store),
+		}),
 		ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second,
 		WriteTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second,
 	}
