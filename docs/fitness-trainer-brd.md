@@ -2,10 +2,10 @@
 
 ## ShwayFit — Fitness Trainer Client Management App
 
-**Version:** 0.2 — Draft for review  
-**Date:** September 10, 2026  
+**Version:** 0.3 — Draft for review  
+**Date:** September 12, 2026  
 **Product name:** ShwayFit  
-**Domain:** shwayfit.app  
+**Domain:** https://shwayfit.app  
 
 ## 1. Purpose
 
@@ -166,7 +166,7 @@ This is a conceptual model, not a finalized Firestore collection schema. Detaile
 | Backend hosting | Google Cloud Run |
 | Reminder scheduling | Scheduled invocation of backend reminder processing; service to be finalized |
 | Email delivery | Resend transactional email API, called by the Go backend |
-| Domain and DNS | shwayfit.app through Porkbun; DNS configuration pending |
+| Domain and DNS | https://shwayfit.app through Porkbun |
 | Reminder mailbox / Reply-To | None |
 | Photo storage | None in POC |
 
@@ -236,6 +236,7 @@ The owner prefers exploring Google Drive or iCloud links later so the applicatio
 |---|---|
 | 0.1 | Initial trainer-first POC requirements and React, Go, Firestore, and GCP direction |
 | 0.2 | Named the app ShwayFit; recorded the Porkbun domain and pending setup status; selected Resend email reminders for the POC; deferred SMS; clarified send-only email with no Reply-To or mailbox, DNS prerequisites, and free-plan limits |
+| 0.3 | Recorded the public ShwayFit domain as https://shwayfit.app |
 
 ## 17. Review status
 

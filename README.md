@@ -4,7 +4,7 @@ A mobile-first client-management app for independent fitness trainers.
 
 ## Current milestone
 
-Local foundation: separate React + TypeScript/Vite frontend and Go REST API, with a real connection check. Authentication, Firestore, and business workflows are not implemented yet. No cloud resources are provisioned.
+Public landing page and API foundation: separate React + TypeScript/Vite frontend and Go REST API. Firebase Hosting serves the landing page and proxies `/api/**` to Cloud Run. Firestore is provisioned with browser access denied. Authentication and business workflows are not implemented yet.
 
 ## Run locally
 
@@ -27,7 +27,7 @@ npm ci
 npm run dev
 ```
 
-Open http://localhost:5173. The page should say “App and API connected”. Stop the backend and select **Check connection** to see the unavailable state.
+Open http://localhost:5173 to view the landing page. The API remains available locally at `/api/v1/health` through Vite's proxy.
 
 ```sh
 curl --fail http://127.0.0.1:8080/api/v1/health
@@ -47,7 +47,7 @@ The API defaults to `HOST=127.0.0.1` and `PORT=8080`; it reads environment varia
 
 Vite proxies `/api` to the Go server, so local requests use one browser origin. To change the backend port, copy `frontend/.env.example` to `frontend/.env.local` and update `API_PROXY_TARGET`. Restart Vite after changes. Never put secrets in `VITE_*` variables: those are public browser configuration.
 
-A production Firebase Hosting rewrite to Cloud Run will be configured during deployment work. Vite's proxy is development-only; `npm run preview` serves the built UI but does not provide an API proxy. A green health check only verifies the HTTP process, not database readiness.
+Vite's proxy is development-only; `npm run preview` serves the built UI but does not provide an API proxy. Firebase Hosting proxies `/api/**` to the deployed Cloud Run API. A green health check only verifies the HTTP process, not database readiness.
 
 ## Checks and builds
 
@@ -64,7 +64,7 @@ npm run lint
 npm run build
 ```
 
-Outputs are independent: `frontend/dist/` and `backend/bin/shwayfit-api`. Deployment is intentionally not configured yet.
+Outputs are independent: `frontend/dist/` and `backend/bin/shwayfit-api`. See [Cloud Run deployment](docs/cloud-run.md) for the active cloud configuration.
 
 ## Project map
 
