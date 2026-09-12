@@ -97,6 +97,6 @@ Charts favour forest green, lime, muted blue, warm amber, and muted violet. Fore
 
 ## Theme implementation and verification
 
-Theme selection defaults to System and supports Light and Dark. Persist the preference locally and apply the resolved class before React renders to avoid a light-mode flash. Use `next-themes` only if the current stack does not already provide an equivalent mechanism.
+Theme selection defaults to System and supports Light and Dark through a compact icon toggle. Persist an explicit preference locally and apply the resolved theme before React renders to avoid a light-mode flash. Use `next-themes` only if the current stack does not already provide an equivalent mechanism.
 
 After UI work, run formatting, lint, type checking when available, relevant tests and builds. Verify both themes and phone and desktop layouts, then search changed UI code for hard-coded colours that should use semantic tokens.

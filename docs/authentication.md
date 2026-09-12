@@ -14,4 +14,4 @@ Cloud Run uses Application Default Credentials from its runtime service account.
 
 The POC uses Google sign-in only. Email/password, phone authentication, and client sign-in are not enabled. Firebase Authentication authorizes `localhost`, `shwayfit.app`, and `shwayfit-f7f0b.web.app` for this flow.
 
-The sign-in page is available at `/sign-in`. A verified identity is not yet a ShwayFit trainer membership; organization provisioning is the next authorization step.
+The sign-in page is available at `/sign-in`. It tries a popup on desktop browsers and falls back to Firebase's redirect flow when a browser blocks popups, as mobile Safari commonly does. A verified identity is not yet a ShwayFit trainer membership; organization provisioning is the next authorization step.

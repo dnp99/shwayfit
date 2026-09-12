@@ -49,13 +49,12 @@
 .site-header { display: flex; align-items: center; justify-content: space-between; }
 .brand { align-items: center; color: var(--foreground); display: inline-flex; font-size: 23px; font-weight: 600; gap: 9px; letter-spacing: -1px; text-decoration: none; }
 .brand-mark { align-items: center; background: var(--primary); border-radius: 11px; color: var(--brand-lime); display: inline-flex; font-family: Georgia, serif; font-size: 29px; height: 35px; justify-content: center; line-height: 1; width: 35px; }
-nav { display: flex; gap: 18px; }
-nav a { color: var(--foreground); font-size: 12px; text-decoration: none; }
+nav { align-items: center; display: flex; gap: 24px; }
+nav a { align-items: center; color: var(--foreground); display: inline-flex; font-size: 14px; font-weight: 500; min-height: 44px; text-decoration: none; }
 nav a:hover { color: var(--primary); text-decoration: underline; text-underline-offset: 4px; }
-.theme-select { appearance: none; background: var(--secondary); border: 1px solid var(--border); border-radius: 8px; color: var(--foreground); cursor: pointer; font: inherit; font-size: 12px; min-height: 32px; padding: 0 24px 0 10px; }
-.theme-select-label { position: relative; }
-.theme-select-label::after { color: var(--muted-foreground); content: '⌄'; font-size: 14px; pointer-events: none; position: absolute; right: 8px; top: 5px; }
-.theme-select:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+.theme-toggle { align-items: center; background: var(--secondary); border: 1px solid var(--border); border-radius: 8px; color: var(--foreground); cursor: pointer; display: inline-flex; justify-content: center; min-height: 44px; min-width: 44px; padding: 0; }
+.theme-toggle:hover { background: var(--accent); color: var(--accent-foreground); }
+.theme-toggle:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
 .visually-hidden { clip: rect(0 0 0 0); clip-path: inset(50%); height: 1px; overflow: hidden; position: absolute; white-space: nowrap; width: 1px; }
 .hero { display: grid; gap: 44px; padding: 72px 0 66px; }
 .eyebrow { color: var(--secondary-foreground); font-size: 10px; font-weight: 600; letter-spacing: 1.75px; line-height: 1.7; margin: 0; }
@@ -114,6 +113,6 @@ footer p { color: var(--muted-foreground); font-size: 11px; margin: 0; }
 }
 
 @media (max-width: 520px) {
-  nav { gap: 10px; }
+  nav { gap: 20px; }
   nav a[href='#how-it-helps'], nav a[href='#pilot'] { display: none; }
 }
