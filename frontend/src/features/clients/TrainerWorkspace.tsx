@@ -64,7 +64,10 @@ export function TrainerWorkspace({ email }: { email: string }) {
 
   async function saveClient(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const data = new FormData(event.currentTarget)
+    // React clears currentTarget after an awaited operation. Keep the form so a
+    // successful new-client submission can reset it without reporting an error.
+    const form = event.currentTarget
+    const data = new FormData(form)
     const input: ClientInput = {
       firstName: String(data.get('firstName') ?? ''), lastName: String(data.get('lastName') ?? ''), email: String(data.get('email') ?? ''),
       phone: String(data.get('phone') ?? ''), goals: String(data.get('goals') ?? ''), notes: String(data.get('notes') ?? ''), status: String(data.get('status') ?? 'active') as ClientInput['status'],
@@ -75,7 +78,7 @@ export function TrainerWorkspace({ email }: { email: string }) {
       const client = await api(path, { method: selectedClient ? 'PATCH' : 'POST', body: JSON.stringify(input) }) as Client
       setClients((current) => selectedClient ? current.map((item) => item.id === client.id ? client : item) : [...current, client].sort((a, b) => a.lastName.localeCompare(b.lastName)))
       setSelectedClient(null)
-      event.currentTarget.reset()
+      form.reset()
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'ShwayFit could not save this client.') }
   }
 
