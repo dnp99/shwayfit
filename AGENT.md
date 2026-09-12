@@ -52,7 +52,7 @@ ShwayFit will hold client contact details, workout information, notes, and measu
 
 ## Frontend design system
 
-Before authenticated trainer screens expand, adopt the direction in [`docs/frontend-design-system.md`](docs/frontend-design-system.md): Tailwind CSS, shadcn/ui, semantic CSS tokens, and System/Light/Dark mode.
+Before authenticated trainer screens expand, adopt the direction in [`docs/design-system.md`](docs/design-system.md): Tailwind CSS, shadcn/ui, semantic CSS tokens, and System/Light/Dark mode.
 
 1. Use semantic tokens rather than hard-coded colours in new authenticated UI components.
 2. Components must work in light and dark mode through the same token names.
