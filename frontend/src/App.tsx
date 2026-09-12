@@ -1,4 +1,5 @@
 import './App.css'
+import { SignIn } from './features/auth/SignIn'
 
 const features = [
   ['01', 'Plan your day', 'See today at a glance, book sessions, and keep every change in one calendar.'],
@@ -7,11 +8,15 @@ const features = [
 ]
 
 function App() {
+  if (window.location.pathname === '/sign-in') {
+    return <SignIn />
+  }
+
   return (
     <div className="site-shell">
       <header className="site-header">
         <a className="brand" href="#top" aria-label="ShwayFit home"><span className="brand-mark" aria-hidden="true">s</span><span>ShwayFit</span></a>
-        <nav aria-label="Main navigation"><a href="#how-it-helps">How it helps</a><a href="#pilot">The pilot</a></nav>
+        <nav aria-label="Main navigation"><a href="#how-it-helps">How it helps</a><a href="#pilot">The pilot</a><a href="/sign-in">Sign in</a></nav>
       </header>
       <main id="top">
         <section className="hero" aria-labelledby="hero-title">

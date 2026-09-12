@@ -20,6 +20,10 @@ The endpoint is deployed through Firebase Hosting at `/api/v1/health`, which pro
 
 Shared endpoint contracts will live in [`../shared/contracts/`](../shared/contracts/) as the API expands. The OpenAPI specification will be the language-neutral source of truth between the React frontend and Go backend.
 
+## `GET /api/v1/me`
+
+Requires `Authorization: Bearer <Firebase ID token>`. The API verifies the token and returns the authenticated Firebase identity. It does not authorize any organization data; future business endpoints must also enforce membership, role, and client assignment.
+
 ## Next contract, not yet implemented
 
 Business endpoints will live under `/api/v1/organizations/{organizationId}/...`. The backend must verify Firebase ID tokens, active organization membership, membership role, and client assignment on every business operation. A path identifier or frontend-selected organization never proves access. Owner status does not implicitly grant access to another trainer's clients.

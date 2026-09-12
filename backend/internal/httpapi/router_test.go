@@ -1,11 +1,24 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/dnp99/shwayfit/backend/internal/authn"
 )
+
+type testVerifier struct {
+	identity authn.Identity
+	err      error
+}
+
+func (v testVerifier) VerifyIDToken(_ context.Context, _ string) (authn.Identity, error) {
+	return v.identity, v.err
+}
 
 func TestHealth(t *testing.T) {
 	response := httptest.NewRecorder()
@@ -44,6 +57,57 @@ func TestRouting(t *testing.T) {
 		t.Run(tc.method+tc.path, func(t *testing.T) {
 			response := httptest.NewRecorder()
 			NewHandler().ServeHTTP(response, httptest.NewRequest(tc.method, tc.path, nil))
+			if response.Code != tc.want {
+				t.Fatalf("status = %d; want %d", response.Code, tc.want)
+			}
+		})
+	}
+}
+
+func TestCurrentIdentity(t *testing.T) {
+	handler := NewHandler(Config{TokenVerifier: testVerifier{identity: authn.Identity{
+		UID: "trainer-123", Email: "trainer@example.com", EmailVerified: true,
+	}}})
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/me", nil)
+	request.Header.Set("Authorization", "Bearer signed-token")
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d", response.Code)
+	}
+	var body struct {
+		UID           string `json:"uid"`
+		Email         string `json:"email"`
+		EmailVerified bool   `json:"emailVerified"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if body.UID != "trainer-123" || body.Email != "trainer@example.com" || !body.EmailVerified {
+		t.Fatalf("unexpected identity: %+v", body)
+	}
+}
+
+func TestCurrentIdentityRejectsUnauthenticatedRequests(t *testing.T) {
+	handler := NewHandler(Config{TokenVerifier: testVerifier{err: errors.New("invalid token")}})
+
+	for _, tc := range []struct {
+		name, authorization string
+		want                int
+	}{
+		{name: "missing token", want: http.StatusUnauthorized},
+		{name: "wrong scheme", authorization: "Basic token", want: http.StatusUnauthorized},
+		{name: "invalid token", authorization: "Bearer invalid-token", want: http.StatusUnauthorized},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			response := httptest.NewRecorder()
+			request := httptest.NewRequest(http.MethodGet, "/api/v1/me", nil)
+			if tc.authorization != "" {
+				request.Header.Set("Authorization", tc.authorization)
+			}
+			handler.ServeHTTP(response, request)
 			if response.Code != tc.want {
 				t.Fatalf("status = %d; want %d", response.Code, tc.want)
 			}
