@@ -87,6 +87,8 @@ ShwayFit is phone-first. Do not merely shrink desktop layouts. Tables become car
 
 Design dark mode, keyboard focus, contrast, reduced motion, and icon labels intentionally. Status must not rely on colour alone. Prefer restrained `transition-colors duration-150` motion; avoid gratuitous spring animation.
 
+All enabled buttons use the pointer cursor. Disabled buttons retain their unavailable or in-progress cursor so their state remains clear.
+
 ## Navigation, data displays, and status
 
 Use a shadcn Sidebar where appropriate on desktop. On mobile, optimize primary navigation for Today, Clients, Add, Calendar, and More rather than hiding the desktop sidebar behind a hamburger. A small lime active indicator is optional.

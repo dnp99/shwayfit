@@ -11,7 +11,7 @@ Use it for:
 
 The contract is the source of truth for API shapes. Go and TypeScript keep their own idiomatic types or generated clients; neither application imports the other's source code.
 
-## Planned layout
+## Layout
 
 ```text
 shared/contracts/
@@ -20,4 +20,4 @@ shared/contracts/
   fixtures/               Test data shared across applications
 ```
 
-Add `openapi.yaml` when the first authenticated client endpoint is designed. Keep it synchronized with [API documentation](../../docs/api.md).
+`openapi.yaml` documents the live health, identity, organization, and client endpoints. Keep it synchronized with [API documentation](../../docs/api.md) whenever public API behaviour changes.

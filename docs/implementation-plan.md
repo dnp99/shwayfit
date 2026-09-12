@@ -6,7 +6,7 @@ On September 10, 2026, the local checkout and `git ls-remote origin` showed no t
 
 The user's request governs implementation. BRD v0.2 is a draft requirement source; proposed defaults remain proposals. The supplied Markdown BRD, PDF BRD, and proposal were copied unchanged into this directory. The removed introductory registrar and pending-domain lines remain absent. Historical mentions elsewhere in the original documents are preserved as supplied.
 
-The future authenticated frontend will use Tailwind CSS, shadcn/ui, semantic CSS tokens, and System/Light/Dark mode. See [Frontend design system direction](frontend-design-system.md).
+The authenticated frontend uses Tailwind CSS, shadcn/ui, semantic CSS tokens, and System/Light/Dark mode. See [Frontend design system direction](frontend-design-system.md).
 
 ## 1. Local foundation (implemented)
 

@@ -22,7 +22,7 @@ Shared endpoint contracts will live in [`../shared/contracts/`](../shared/contra
 
 ## `GET /api/v1/me`
 
-Requires `Authorization: Bearer <Firebase ID token>`. The API verifies the token and returns the authenticated Firebase identity. It does not authorize any organization data; future business endpoints must also enforce membership, role, and client assignment.
+Requires `Authorization: Bearer <Firebase ID token>`. The API verifies the token and returns the authenticated Firebase identity. It does not itself authorize organization data; the organization and client endpoints below enforce membership, role, and client assignment.
 
 ## Organization and client records
 

@@ -14,7 +14,7 @@ Document every material change in the same work session.
 ## Branch and push workflow
 
 1. Before a non-trivial change, update the current branch from its remote when it is safe to do so.
-2. Create a `codex/<descriptive-name>` branch for feature work unless the user explicitly requests work on another branch.
+2. Create a `feature/<descriptive-name>` branch for feature work unless the user explicitly requests work on another branch.
 3. Never force-push.
 4. Never push without the user's explicit request in the current conversation.
 5. Before an approved push, run and pass:
