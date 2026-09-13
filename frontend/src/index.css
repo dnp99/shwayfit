@@ -3,8 +3,8 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 
-/* ShwayFit persists theme choice on the root element as data-theme. Keep
-   shadcn's generated dark: utilities bound to that single theme source. */
+/* ShwayFit persists the resolved theme on the root element. Keep shadcn's
+   generated dark: utilities bound to that single source of truth. */
 @custom-variant dark (&:is([data-theme='dark'] *));
 
 @theme inline {
@@ -12,6 +12,8 @@
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
@@ -21,27 +23,32 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-border: var(--border);
-  --color-input: var(--border);
+  --color-input: var(--input);
   --color-ring: var(--ring);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-  --font-heading: var(--font-sans);
-  --font-sans: 'Geist Variable', sans-serif;
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-brand-lime: var(--brand-lime);
   --color-chart-1: var(--chart-1);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --font-heading: var(--font-sans);
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -51,23 +58,129 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: var(--foreground); background: var(--background); font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; --background: #F7F7F3; --foreground: #17211D; --card: #FFFFFF; --card-foreground: #17211D; --popover: #FFFFFF; --popover-foreground: #17211D; --primary: #205548; --primary-foreground: #FFFFFF; --secondary: #EDF2EF; --secondary-foreground: #23483D; --muted: #F0F2EF; --muted-foreground: #68746E; --accent: #E3EEE8; --accent-foreground: #17473C; --destructive: #B42318; --destructive-foreground: #FFFFFF; --border: #DDE3DF; --input: #D7DFDA; --ring: #43806D; --chart-1: #205548; --chart-2: #66A58F; --chart-3: #96775F; --chart-4: #79718E; --chart-5: #B05E55; --radius: 0.75rem; --sidebar: #FFFFFF; --sidebar-foreground: #17211D; --sidebar-primary: #205548; --sidebar-primary-foreground: #FFFFFF; --sidebar-accent: #E3EEE8; --sidebar-accent-foreground: #17473C; --sidebar-border: #DDE3DF; --sidebar-ring: #43806D; }
-* { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; }
+:root {
+  --background: #F7F7F3;
+  --foreground: #17211D;
+  --card: #FFFFFF;
+  --card-foreground: #17211D;
+  --popover: #FFFFFF;
+  --popover-foreground: #17211D;
+  --primary: #205548;
+  --primary-foreground: #FFFFFF;
+  --secondary: #EDF2EF;
+  --secondary-foreground: #23483D;
+  --muted: #F0F2EF;
+  --muted-foreground: #68746E;
+  --accent: #E3EEE8;
+  --accent-foreground: #17473C;
+  --border: #DDE3DF;
+  --input: #D7DFDA;
+  --ring: #43806D;
+  --destructive: #B42318;
+  --destructive-foreground: #FFFFFF;
+  --success: #2F6A59;
+  --success-foreground: #FFFFFF;
+  --warning: #96775F;
+  --warning-foreground: #FFFFFF;
+  --info: #5F8190;
+  --info-foreground: #FFFFFF;
+  --brand-lime: #C6D978;
+  --chart-1: #205548;
+  --chart-2: #C6D978;
+  --chart-3: #5F8190;
+  --chart-4: #96775F;
+  --chart-5: #79718E;
+  --agenda-surface: #205548;
+  --agenda-foreground: #FFFFFF;
+  --agenda-line: #4C6C61;
+  --agenda-muted: #CFE2DA;
+  --agenda-note: #91ADA2;
+  --radius: 0.75rem;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #17211D;
+  --sidebar-primary: #205548;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #E3EEE8;
+  --sidebar-accent-foreground: #17473C;
+  --sidebar-border: #DDE3DF;
+  --sidebar-ring: #43806D;
+  color-scheme: light;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
 
-:root[data-theme='dark'] { --background: #0F1412; --foreground: #F2F5F3; --card: #151B18; --card-foreground: #F2F5F3; --popover: #151B18; --popover-foreground: #F2F5F3; --primary: #66A58F; --primary-foreground: #0B1713; --secondary: #1C2722; --secondary-foreground: #DCE7E1; --muted: #1B211E; --muted-foreground: #9CA8A1; --accent: #20372F; --accent-foreground: #DDF0E7; --destructive: #E76B62; --destructive-foreground: #0F1412; --border: #2B342F; --input: #334039; --ring: #77B6A0; --chart-1: #66A58F; --chart-2: #C6D978; --chart-3: #96775F; --chart-4: #79718E; --chart-5: #B05E55; --sidebar: #151B18; --sidebar-foreground: #F2F5F3; --sidebar-primary: #66A58F; --sidebar-primary-foreground: #0B1713; --sidebar-accent: #20372F; --sidebar-accent-foreground: #DDF0E7; --sidebar-border: #2B342F; --sidebar-ring: #77B6A0; }
+:root[data-theme='dark'] {
+  --background: #0F1412;
+  --foreground: #F2F5F3;
+  --card: #151B18;
+  --card-foreground: #F2F5F3;
+  --popover: #151B18;
+  --popover-foreground: #F2F5F3;
+  --primary: #66A58F;
+  --primary-foreground: #0B1713;
+  --secondary: #1C2722;
+  --secondary-foreground: #DCE7E1;
+  --muted: #1B211E;
+  --muted-foreground: #9CA8A1;
+  --accent: #20372F;
+  --accent-foreground: #DDF0E7;
+  --border: #2B342F;
+  --input: #334039;
+  --ring: #77B6A0;
+  --destructive: #E76B62;
+  --destructive-foreground: #0F1412;
+  --success: #66A58F;
+  --success-foreground: #0B1713;
+  --warning: #C3A17B;
+  --warning-foreground: #0F1412;
+  --info: #8AAAB7;
+  --info-foreground: #0F1412;
+  --brand-lime: #C6D978;
+  --chart-1: #66A58F;
+  --chart-2: #C6D978;
+  --chart-3: #5F8190;
+  --chart-4: #96775F;
+  --chart-5: #79718E;
+  --agenda-surface: #173F37;
+  --agenda-foreground: #F2F5F3;
+  --agenda-line: #4D6259;
+  --agenda-muted: #CFE2DA;
+  --agenda-note: #A8C1B6;
+  --sidebar: #151B18;
+  --sidebar-foreground: #F2F5F3;
+  --sidebar-primary: #66A58F;
+  --sidebar-primary-foreground: #0B1713;
+  --sidebar-accent: #20372F;
+  --sidebar-accent-foreground: #DDF0E7;
+  --sidebar-border: #2B342F;
+  --sidebar-ring: #77B6A0;
+  color-scheme: dark;
+}
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
-  button:not(:disabled) {
-    cursor: pointer;
-  }
+
   html {
     @apply font-sans;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    margin: 0;
+    min-width: 320px;
+  }
+
+  h1,
+  h2,
+  h3,
+  p {
+    margin-top: 0;
+  }
+
+  button:not(:disabled) {
+    cursor: pointer;
   }
 }

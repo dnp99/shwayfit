@@ -45,6 +45,9 @@ These values belong in theme definitions, not scattered through application comp
 | input | `#D7DFDA` |
 | ring | `#43806D` |
 | destructive | `#B42318` |
+| success / success-foreground | `#2F6A59` / `#FFFFFF` |
+| warning / warning-foreground | `#96775F` / `#FFFFFF` |
+| info / info-foreground | `#5F8190` / `#FFFFFF` |
 
 ### Dark
 
@@ -62,12 +65,15 @@ These values belong in theme definitions, not scattered through application comp
 | input | `#334039` |
 | ring | `#77B6A0` |
 | destructive | `#E76B62` |
+| success / success-foreground | `#66A58F` / `#0B1713` |
+| warning / warning-foreground | `#C3A17B` / `#0F1412` |
+| info / info-foreground | `#8AAAB7` / `#0F1412` |
 
 Dark mode is independently designed. It uses layered neutral green-charcoal surfaces, while the primary action becomes lighter. Do not make the entire interface green or use light-mode forest 800 as the main dark-mode action colour.
 
 ## Styling and components
 
-Use semantic Tailwind classes such as `bg-background`, `text-foreground`, `bg-card`, `text-card-foreground`, `bg-primary`, `text-primary-foreground`, `bg-secondary`, `text-secondary-foreground`, `bg-muted`, `text-muted-foreground`, `bg-accent`, `text-accent-foreground`, `border-border`, and `ring-ring`. Tailwind v4 is integrated with the Vite plugin and maps these names directly to the CSS theme variables in `src/index.css`.
+Use semantic Tailwind classes such as `bg-background`, `text-foreground`, `bg-card`, `text-card-foreground`, `bg-primary`, `text-primary-foreground`, `bg-secondary`, `text-secondary-foreground`, `bg-muted`, `text-muted-foreground`, `bg-accent`, `text-accent-foreground`, `border-border`, and `ring-ring`. Use `success`, `warning`, and `info` for status only; use `destructive` only for errors and destructive actions. `brand-lime` is available for small brand accents. Tailwind v4 is integrated with the Vite plugin and maps these names directly to the CSS theme variables in `src/index.css`, which is the single source of truth for application tokens.
 
 Do not introduce component-level values such as `bg-[#205548]`, `text-[#68746e]`, or `dark:bg-[#151b18]`. Raw values are acceptable when defining the theme or for a documented special-purpose visualization. Lime (`#C6D978`) is for small active indicators, goals, progress, logo detail, current-time markers, and chart highlights; it is not a normal primary button, body-text, form, navigation, or large-background colour.
 
@@ -75,9 +81,9 @@ Prefer shadcn/ui primitives for generic controls: Button, Card, Badge, Input, Te
 
 ## Typography, spacing, and shape
 
-Use Inter for product UI, with Geist as an acceptable alternative. Use regular, medium, and semibold weights; avoid excessive bold text. Marketing pages may use DM Serif Display for large headings only.
+Use Geist for product UI. Use regular, medium, and semibold weights; avoid excessive bold text. Editorial serif headings are reserved for the public marketing site only.
 
-Use Tailwind's standard spacing scale: `gap-2` for icon/text, `gap-3` for compact groups, `gap-4` for forms and cards, `p-4` to `p-6` for card padding, and `px-4`, `px-6`, and `px-8` across phone, tablet, and desktop page widths. Base radius is `0.75rem`; controls should be about 8–10px, cards about 12px, and larger dialogs about 16px. Avoid `rounded-3xl` as a default.
+Use Tailwind's standard spacing scale: `gap-2` for icon/text, `gap-3` for compact groups, `gap-4` for forms and cards, `p-4` to `p-6` for card padding, and `px-4`, `px-6`, and `px-8` across phone, tablet, and desktop page widths. Base radius is `0.75rem`; controls should be about 8–10px, cards about 12px, and larger dialogs about 16px. Avoid `rounded-3xl` as a default. Normal Button and Input controls are 40px on desktop and 44px on phones; compact `xs` and `sm` variants are reserved for dense, secondary controls.
 
 Prefer borders over shadows. Normal cards use a subtle border and no shadow; elevated controls may use `shadow-sm`, and dialogs or popovers may use `shadow-lg`.
 
@@ -95,7 +101,7 @@ Use a shadcn Sidebar where appropriate on desktop. On mobile, optimize primary n
 
 Normal data cards use the card surface, a subtle border, roughly 12px radius, and little or no shadow. Interactive cards may use `transition-colors hover:bg-accent/40`. Use tinted status backgrounds and coloured text instead of filling whole cards. Optional session-category colours are strength `#52705F`, mobility `#96775F`, cardio `#B05E55`, recovery `#5F8190`, and assessment `#79718E`; use them only in small visual details.
 
-Charts favour forest green, lime, muted blue, warm amber, and muted violet. Forest green represents primary business or fitness data and lime marks targets or highlighted points. Avoid rainbow dashboards.
+Charts favour forest green, lime, muted blue, warm amber, and muted violet. The semantic order is chart-1 forest, chart-2 lime, chart-3 muted blue, chart-4 warm amber, and chart-5 muted violet. Forest green represents primary business or fitness data and lime marks targets or highlighted points. Avoid rainbow dashboards.
 
 ## Theme implementation and verification
 
