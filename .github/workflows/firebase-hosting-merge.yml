@@ -16,7 +16,7 @@ env:
   PROJECT_ID: shwayfit-f7f0b
   REGION: northamerica-northeast1
   CLOUD_RUN_SERVICE: shwayfit-api
-  WORKLOAD_IDENTITY_PROVIDER: projects/552652876512/locations/global/workloadIdentityPools/github-actions/providers/github
+  WORKLOAD_IDENTITY_PROVIDER: projects/552652876512/locations/global/workloadIdentityPools/github-actions/providers/github-actions-shwayfit
   DEPLOYER_SERVICE_ACCOUNT: github-actions-deployer@shwayfit-f7f0b.iam.gserviceaccount.com
 jobs:
   deploy:

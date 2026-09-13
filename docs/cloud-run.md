@@ -38,7 +38,7 @@ GitHub authenticates to Google Cloud through Workload Identity Federation, rathe
 PROJECT_ID=shwayfit-f7f0b
 PROJECT_NUMBER=552652876512
 POOL_ID=github-actions
-PROVIDER_ID=github
+PROVIDER_ID=github-actions-shwayfit
 SERVICE_ACCOUNT=github-actions-deployer
 
 gcloud iam service-accounts create "$SERVICE_ACCOUNT" --project "$PROJECT_ID"
