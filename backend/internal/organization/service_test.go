@@ -60,3 +60,28 @@ func TestClientInputRequiresNamesAndApprovedStatus(t *testing.T) {
 		t.Fatalf("error = %v; want %v", err, ErrInvalidInput)
 	}
 }
+
+func TestClientInputValidatesPreferredTimeWindow(t *testing.T) {
+	valid := ClientInput{FirstName: "Avery", LastName: "Sample", Status: "active"}
+	for _, test := range []struct {
+		name       string
+		start, end string
+		want       error
+	}{
+		{name: "omitted", want: nil},
+		{name: "valid", start: "09:00", end: "11:30", want: nil},
+		{name: "only start", start: "09:00", want: ErrInvalidInput},
+		{name: "invalid format", start: "9:00", end: "11:30", want: ErrInvalidInput},
+		{name: "end before start", start: "11:30", end: "09:00", want: ErrInvalidInput},
+		{name: "zero length", start: "09:00", end: "09:00", want: ErrInvalidInput},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			input := valid
+			input.PreferredStartTime, input.PreferredEndTime = test.start, test.end
+			err := validateClientInput(input)
+			if err != test.want {
+				t.Fatalf("validateClientInput() = %v, want %v", err, test.want)
+			}
+		})
+	}
+}

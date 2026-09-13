@@ -86,6 +86,6 @@ Outputs are independent: `frontend/dist/` and `backend/bin/shwayfit-api`. See [C
 - `frontend/`: phone-first React application.
 - `backend/cmd/api/`: process configuration and graceful shutdown.
 - `backend/internal/httpapi/`: HTTP routes and boundary tests.
-- `docs/`: original BRD and proposal, implementation plan, API contract.
+- `docs/`: original BRD and proposal, API contract, and operational documentation.
 
-See [implementation plan](docs/implementation-plan.md), [API documentation](docs/api.md), and [BRD](docs/fitness-trainer-brd.md).
+See [API documentation](docs/api.md) and the [BRD](docs/fitness-trainer-brd.md).

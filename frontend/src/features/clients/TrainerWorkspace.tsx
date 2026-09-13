@@ -7,12 +7,13 @@ import { Card, CardContent, CardHeader } from '../../components/ui/card'
 import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 import { Textarea } from '../../components/ui/textarea'
+import { ClientDirectory } from './ClientDirectory'
 
 type Organization = { id: string; displayName: string }
-type Client = { id: string; firstName: string; lastName: string; email?: string; phone?: string; goals?: string; notes?: string; status: 'active' | 'archived' }
+type Client = { id: string; firstName: string; lastName: string; email?: string; phone?: string; goals?: string; notes?: string; preferredStartTime?: string; preferredEndTime?: string; status: 'active' | 'archived' }
 type ClientInput = Omit<Client, 'id'>
 
-const emptyClient: ClientInput = { firstName: '', lastName: '', email: '', phone: '', goals: '', notes: '', status: 'active' }
+const emptyClient: ClientInput = { firstName: '', lastName: '', email: '', phone: '', goals: '', notes: '', preferredStartTime: '', preferredEndTime: '', status: 'active' }
 const workspaceEyebrowClass = 'text-xs font-semibold tracking-[0.175em] text-secondary-foreground'
 const workspaceBrandClass = 'inline-flex items-center gap-2 text-xl font-semibold tracking-tight text-foreground no-underline'
 const workspaceBrandMarkClass = 'grid size-9 place-items-center rounded-lg bg-primary text-lg font-semibold text-brand-lime'
@@ -73,7 +74,12 @@ export function TrainerWorkspace({ email }: { email: string }) {
     const data = new FormData(form)
     const input: ClientInput = {
       firstName: String(data.get('firstName') ?? ''), lastName: String(data.get('lastName') ?? ''), email: String(data.get('email') ?? ''),
-      phone: String(data.get('phone') ?? ''), goals: String(data.get('goals') ?? ''), notes: String(data.get('notes') ?? ''), status: String(data.get('status') ?? 'active') as ClientInput['status'],
+      phone: String(data.get('phone') ?? ''), goals: String(data.get('goals') ?? ''), notes: String(data.get('notes') ?? ''),
+      preferredStartTime: String(data.get('preferredStartTime') ?? ''), preferredEndTime: String(data.get('preferredEndTime') ?? ''), status: String(data.get('status') ?? 'active') as ClientInput['status'],
+    }
+    if ((input.preferredStartTime || input.preferredEndTime) && (!input.preferredStartTime || !input.preferredEndTime || input.preferredStartTime >= input.preferredEndTime)) {
+      setError('Enter both preferred times, with an end time after the start time.')
+      return
     }
     try {
       setError(null)
@@ -92,11 +98,12 @@ export function TrainerWorkspace({ email }: { email: string }) {
     <header className="flex items-center justify-between"><a className={workspaceBrandClass} href="/" aria-label="ShwayFit home"><span className={workspaceBrandMarkClass} aria-hidden="true">s</span><span>ShwayFit</span></a><ThemeToggle /></header>
     <header className="mt-14 flex flex-wrap items-end justify-between gap-5 border-b border-border pb-6"><div><p className={workspaceEyebrowClass}>TRAINER WORKSPACE</p><h1 className="mt-3 text-4xl font-semibold leading-none tracking-tight sm:text-5xl">{organization.displayName}</h1></div><p className="max-w-48 text-right text-sm text-muted-foreground break-all">{email}</p></header>
     {error && <p className="mt-4 text-sm text-destructive" role="alert">{error}</p>}
-    <div className="mx-auto mt-6 grid max-w-6xl gap-4 lg:grid-cols-[minmax(18rem,.75fr)_minmax(25rem,1.25fr)]">
-      <Card aria-labelledby="clients-heading"><CardHeader><div><p className={workspaceEyebrowClass}>CLIENTS</p><h2 id="clients-heading" className="mt-1 text-xl font-semibold tracking-tight">Your people</h2></div><span className="grid size-7 place-items-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground">{clients.length}</span></CardHeader><CardContent>{clients.length === 0 ? <p className="text-sm leading-6 text-muted-foreground">Add your first client to begin keeping their training details together.</p> : <ul>{clients.map((client) => <li className="border-t border-border first:border-t-0" key={client.id}><button type="button" className={`flex min-h-17 w-full items-center justify-between py-3 text-left transition-colors hover:text-accent-foreground focus-visible:outline-3 focus-visible:outline-ring focus-visible:outline-offset-2 ${selectedClient?.id === client.id ? 'text-accent-foreground' : ''}`} onClick={() => setSelectedClient(client)}><span><strong className="block text-sm">{client.firstName} {client.lastName}</strong><small className="mt-1 block text-xs text-muted-foreground">{client.status === 'active' ? 'Active' : 'Archived'}</small></span><span aria-hidden="true">›</span></button></li>)}</ul>}</CardContent></Card>
+    <div className="mx-auto mt-6 grid max-w-7xl gap-4 lg:grid-cols-[minmax(20rem,.85fr)_minmax(30rem,1.15fr)]">
+      <ClientDirectory clients={clients} selectedClientID={selectedClient?.id} onSelect={(clientID) => setSelectedClient(clients.find((client) => client.id === clientID) ?? null)} />
       <Card aria-labelledby="client-form-heading"><CardHeader><div><p className={workspaceEyebrowClass}>{selectedClient ? 'EDIT CLIENT' : 'NEW CLIENT'}</p><h2 id="client-form-heading" className="mt-1 text-xl font-semibold tracking-tight">{selectedClient ? `${selectedClient.firstName} ${selectedClient.lastName}` : 'Add a client'}</h2></div>{selectedClient && <Button type="button" variant="ghost" onClick={() => setSelectedClient(null)}>New client</Button>}</CardHeader><CardContent><form className="grid gap-4" onSubmit={saveClient} key={selectedClient?.id ?? 'new'}>
         <div className="grid gap-4 sm:grid-cols-2"><Label>First name<Input required maxLength={80} name="firstName" defaultValue={formValues.firstName} /></Label><Label>Last name<Input required maxLength={80} name="lastName" defaultValue={formValues.lastName} /></Label></div>
         <div className="grid gap-4 sm:grid-cols-2"><Label>Email <span className="text-xs font-normal text-muted-foreground">optional</span><Input type="email" maxLength={254} name="email" defaultValue={formValues.email} /></Label><Label>Phone <span className="text-xs font-normal text-muted-foreground">optional</span><Input maxLength={40} name="phone" defaultValue={formValues.phone} /></Label></div>
+        <fieldset className="grid gap-3 rounded-xl border border-border p-4"><legend className="px-1 text-sm font-medium">Preferred time window <span className="text-xs font-normal text-muted-foreground">optional</span></legend><p className="text-sm text-muted-foreground">A scheduling preference only. It does not book a session.</p><div className="grid gap-4 sm:grid-cols-2"><Label>Preferred start<Input type="time" name="preferredStartTime" defaultValue={formValues.preferredStartTime} /></Label><Label>Preferred end<Input type="time" name="preferredEndTime" defaultValue={formValues.preferredEndTime} /></Label></div></fieldset>
         <Label>Training goals <span className="text-xs font-normal text-muted-foreground">optional</span><Textarea maxLength={2000} name="goals" defaultValue={formValues.goals} /></Label><Label>Private notes <span className="text-xs font-normal text-muted-foreground">optional</span><Textarea maxLength={4000} name="notes" defaultValue={formValues.notes} /></Label>
         <Label>Status<select className="min-h-11 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring" name="status" defaultValue={formValues.status}><option value="active">Active</option><option value="archived">Archived</option></select></Label>
         <Button className="justify-between sm:w-fit" type="submit">{selectedClient ? 'Save changes' : 'Add client'} <span aria-hidden="true">→</span></Button>
