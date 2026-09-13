@@ -42,8 +42,9 @@ PROVIDER_ID=github-actions-shwayfit
 SERVICE_ACCOUNT=github-actions-deployer
 
 gcloud iam service-accounts create "$SERVICE_ACCOUNT" --project "$PROJECT_ID"
-gcloud projects add-iam-policy-binding "$PROJECT_ID" --member "serviceAccount:${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com" --role roles/run.admin
-gcloud projects add-iam-policy-binding "$PROJECT_ID" --member "serviceAccount:${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com" --role roles/cloudbuild.builds.editor
+gcloud projects add-iam-policy-binding "$PROJECT_ID" --member "serviceAccount:${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com" --role roles/run.sourceDeveloper
+gcloud projects add-iam-policy-binding "$PROJECT_ID" --member "serviceAccount:${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com" --role roles/serviceusage.serviceUsageConsumer
+gcloud projects add-iam-policy-binding "$PROJECT_ID" --member "serviceAccount:${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com" --role roles/artifactregistry.reader
 gcloud projects add-iam-policy-binding "$PROJECT_ID" --member "serviceAccount:${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com" --role roles/firebasehosting.admin
 gcloud iam service-accounts add-iam-policy-binding "${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" --project "$PROJECT_ID" --member "serviceAccount:${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com" --role roles/iam.serviceAccountUser
 gcloud iam workload-identity-pools create "$POOL_ID" --project "$PROJECT_ID" --location global --display-name "GitHub Actions"
