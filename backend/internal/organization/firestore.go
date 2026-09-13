@@ -134,7 +134,7 @@ func (s *FirestoreStore) UpdateClient(ctx context.Context, organizationID, clien
 }
 
 func clientData(input ClientInput) map[string]any {
-	return map[string]any{"firstName": input.FirstName, "lastName": input.LastName, "email": input.Email, "phone": input.Phone, "goals": input.Goals, "notes": input.Notes, "status": input.Status}
+	return map[string]any{"firstName": input.FirstName, "lastName": input.LastName, "email": input.Email, "phone": input.Phone, "goals": input.Goals, "notes": input.Notes, "preferredStartTime": input.PreferredStartTime, "preferredEndTime": input.PreferredEndTime, "status": input.Status}
 }
 func toUpdates(data map[string]any) []firestore.Update {
 	updates := make([]firestore.Update, 0, len(data))
@@ -150,7 +150,9 @@ func clientFromData(id string, data map[string]any) Client {
 	phone, _ := data["phone"].(string)
 	goals, _ := data["goals"].(string)
 	notes, _ := data["notes"].(string)
+	preferredStartTime, _ := data["preferredStartTime"].(string)
+	preferredEndTime, _ := data["preferredEndTime"].(string)
 	status, _ := data["status"].(string)
 	assignedTrainerUID, _ := data["assignedTrainerUid"].(string)
-	return Client{ID: id, FirstName: firstName, LastName: lastName, Email: email, Phone: phone, Goals: goals, Notes: notes, Status: status, AssignedTrainerUID: assignedTrainerUID}
+	return Client{ID: id, FirstName: firstName, LastName: lastName, Email: email, Phone: phone, Goals: goals, Notes: notes, PreferredStartTime: preferredStartTime, PreferredEndTime: preferredEndTime, Status: status, AssignedTrainerUID: assignedTrainerUID}
 }

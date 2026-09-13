@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"net/mail"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 
@@ -39,18 +40,22 @@ type Client struct {
 	Phone              string `json:"phone,omitempty"`
 	Goals              string `json:"goals,omitempty"`
 	Notes              string `json:"notes,omitempty"`
+	PreferredStartTime string `json:"preferredStartTime,omitempty"`
+	PreferredEndTime   string `json:"preferredEndTime,omitempty"`
 	Status             string `json:"status"`
 	AssignedTrainerUID string `json:"-"`
 }
 
 type ClientInput struct {
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Email     string `json:"email"`
-	Phone     string `json:"phone"`
-	Goals     string `json:"goals"`
-	Notes     string `json:"notes"`
-	Status    string `json:"status"`
+	FirstName          string `json:"firstName"`
+	LastName           string `json:"lastName"`
+	Email              string `json:"email"`
+	Phone              string `json:"phone"`
+	Goals              string `json:"goals"`
+	Notes              string `json:"notes"`
+	PreferredStartTime string `json:"preferredStartTime"`
+	PreferredEndTime   string `json:"preferredEndTime"`
+	Status             string `json:"status"`
 }
 
 // Store is deliberately small so domain rules can be tested without Firestore.
@@ -179,6 +184,9 @@ func validateClientInput(input ClientInput) error {
 	if input.Status != "active" && input.Status != "archived" {
 		return ErrInvalidInput
 	}
+	if !validTimeWindow(input.PreferredStartTime, input.PreferredEndTime) {
+		return ErrInvalidInput
+	}
 	if input.Email != "" {
 		address, err := mail.ParseAddress(input.Email)
 		if err != nil || address.Address != input.Email || !optionalLength(input.Email, 254) {
@@ -192,7 +200,17 @@ func normalizeClientInput(input ClientInput) ClientInput {
 	input.FirstName, input.LastName = strings.TrimSpace(input.FirstName), strings.TrimSpace(input.LastName)
 	input.Email, input.Phone = strings.TrimSpace(input.Email), strings.TrimSpace(input.Phone)
 	input.Goals, input.Notes = strings.TrimSpace(input.Goals), strings.TrimSpace(input.Notes)
+	input.PreferredStartTime, input.PreferredEndTime = strings.TrimSpace(input.PreferredStartTime), strings.TrimSpace(input.PreferredEndTime)
 	return input
+}
+
+var clockTimePattern = regexp.MustCompile(`^(?:[01][0-9]|2[0-3]):[0-5][0-9]$`)
+
+func validTimeWindow(start, end string) bool {
+	if start == "" && end == "" {
+		return true
+	}
+	return clockTimePattern.MatchString(start) && clockTimePattern.MatchString(end) && start < end
 }
 
 func validLength(value string, minimum, maximum int) bool {
