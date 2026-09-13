@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { getFirebaseAuth } from '../../lib/firebase'
-import { ThemeToggle } from '../../components/ThemeToggle'
 import { Button } from '../../components/ui/button'
 import { Card, CardContent, CardHeader } from '../../components/ui/card'
 import { Input } from '../../components/ui/input'
@@ -15,8 +14,6 @@ type ClientInput = Omit<Client, 'id'>
 
 const emptyClient: ClientInput = { firstName: '', lastName: '', email: '', phone: '', goals: '', notes: '', preferredStartTime: '', preferredEndTime: '', status: 'active' }
 const workspaceEyebrowClass = 'text-xs font-semibold tracking-[0.175em] text-secondary-foreground'
-const workspaceBrandClass = 'inline-flex items-center gap-2 text-xl font-semibold tracking-tight text-foreground no-underline'
-const workspaceBrandMarkClass = 'grid size-9 place-items-center rounded-lg bg-primary text-lg font-semibold text-brand-lime'
 
 async function api(path: string, options: RequestInit = {}) {
   const user = getFirebaseAuth().currentUser
@@ -94,9 +91,8 @@ export function TrainerWorkspace({ email }: { email: string }) {
   if (isLoading) return <section className="flex min-h-screen items-center justify-center bg-background p-5 text-muted-foreground"><p>Preparing your workspace…</p></section>
   if (!organization) return <OrganizationSetup email={email} error={error} onSubmit={createOrganization} />
   const formValues = selectedClient ?? emptyClient
-  return <main className="min-h-screen bg-background px-5 py-8 text-foreground sm:px-10 lg:px-20">
-    <header className="flex items-center justify-between"><a className={workspaceBrandClass} href="/" aria-label="ShwayFit home"><span className={workspaceBrandMarkClass} aria-hidden="true">s</span><span>ShwayFit</span></a><ThemeToggle /></header>
-    <header className="mt-14 flex flex-wrap items-end justify-between gap-5 border-b border-border pb-6"><div><p className={workspaceEyebrowClass}>TRAINER WORKSPACE</p><h1 className="mt-3 text-4xl font-semibold leading-none tracking-tight sm:text-5xl">{organization.displayName}</h1></div><p className="max-w-48 text-right text-sm text-muted-foreground break-all">{email}</p></header>
+  return <section className="text-foreground">
+    <header className="flex flex-wrap items-end justify-between gap-5 border-b border-border pb-6"><div><p className={workspaceEyebrowClass}>TRAINER WORKSPACE</p><h1 className="mt-3 text-4xl font-semibold leading-none tracking-tight sm:text-5xl">{organization.displayName}</h1></div><p className="max-w-48 text-right text-sm text-muted-foreground break-all">{email}</p></header>
     {error && <p className="mt-4 text-sm text-destructive" role="alert">{error}</p>}
     <div className="mx-auto mt-6 grid max-w-7xl gap-4 lg:grid-cols-[minmax(20rem,.85fr)_minmax(30rem,1.15fr)]">
       <ClientDirectory clients={clients} selectedClientID={selectedClient?.id} onSelect={(clientID) => setSelectedClient(clients.find((client) => client.id === clientID) ?? null)} />
@@ -109,9 +105,9 @@ export function TrainerWorkspace({ email }: { email: string }) {
         <Button className="justify-between sm:w-fit" type="submit">{selectedClient ? 'Save changes' : 'Add client'} <span aria-hidden="true">→</span></Button>
       </form></CardContent></Card>
     </div>
-  </main>
+  </section>
 }
 
 function OrganizationSetup({ email, error, onSubmit }: { email: string; error: string | null; onSubmit: (event: FormEvent<HTMLFormElement>) => void }) {
-  return <main className="min-h-screen bg-background px-5 py-8 text-foreground sm:px-10"><Card className="mx-auto mt-24 max-w-lg"><CardContent className="p-8"><p className={workspaceEyebrowClass}>TRAINER WORKSPACE</p><h1 className="mt-3 text-4xl font-semibold leading-none tracking-tight">Set up your training business</h1><p className="mt-4 leading-7 text-muted-foreground">You are signed in as <strong>{email}</strong>. Create your organization to start managing client records.</p><form className="mt-6 grid gap-4" onSubmit={onSubmit}><Label>Business name<Input name="displayName" required minLength={2} maxLength={80} autoComplete="organization" placeholder="Your training business" /></Label><Button className="justify-between sm:w-fit" type="submit">Create workspace <span aria-hidden="true">→</span></Button></form>{error && <p className="mt-4 text-sm text-destructive" role="alert">{error}</p>}</CardContent></Card></main>
+  return <section className="text-foreground"><Card className="mx-auto mt-16 max-w-lg"><CardContent className="p-8"><p className={workspaceEyebrowClass}>TRAINER WORKSPACE</p><h1 className="mt-3 text-4xl font-semibold leading-none tracking-tight">Set up your training business</h1><p className="mt-4 leading-7 text-muted-foreground">You are signed in as <strong>{email}</strong>. Create your organization to start managing client records.</p><form className="mt-6 grid gap-4" onSubmit={onSubmit}><Label>Business name<Input name="displayName" required minLength={2} maxLength={80} autoComplete="organization" placeholder="Your training business" /></Label><Button className="justify-between sm:w-fit" type="submit">Create workspace <span aria-hidden="true">→</span></Button></form>{error && <p className="mt-4 text-sm text-destructive" role="alert">{error}</p>}</CardContent></Card></section>
 }

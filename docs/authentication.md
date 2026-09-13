@@ -12,6 +12,8 @@ Cloud Run uses Application Default Credentials from its runtime service account.
 
 ## Google sign-in
 
+Firebase Authentication uses browser-local persistence. On a refresh, the application waits for Firebase to restore a remembered Google session before deciding whether the trainer must sign in again. The React route guard improves navigation only; it does not replace server-side Firebase token, organization membership, role, or client-assignment checks.
+
 The POC uses Google sign-in only. Email/password, phone authentication, and client sign-in are not enabled. Firebase Authentication authorizes `localhost`, `shwayfit.app`, and `shwayfit-f7f0b.web.app` for this flow.
 
 The sign-in page is available at `/sign-in`. It tries a popup on desktop browsers and falls back to Firebase's redirect flow when a browser blocks popups, as mobile Safari commonly does. The first verified trainer creates one organization and receives its active `owner` membership through the authenticated setup screen. Later users require a provisioned membership; Firebase identity alone never grants client-data access.

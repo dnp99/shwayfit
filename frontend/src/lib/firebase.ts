@@ -1,5 +1,5 @@
 import { type FirebaseApp, getApp, getApps, initializeApp } from 'firebase/app'
-import { getAuth } from 'firebase/auth'
+import { browserLocalPersistence, getAuth, setPersistence } from 'firebase/auth'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyAKexkOxO8HzuCv8VgQWDYCQ9-p6ZuuRf4',
@@ -20,4 +20,10 @@ function getFirebaseApp(): FirebaseApp {
 // authorization still depend on a signed Firebase ID token.
 export function getFirebaseAuth() {
   return getAuth(getFirebaseApp())
+}
+
+// Explicit local persistence makes a refresh restore the Firebase session
+// before route guards decide whether a trainer must sign in again.
+export function restoreFirebaseAuthSession() {
+  return setPersistence(getFirebaseAuth(), browserLocalPersistence)
 }
