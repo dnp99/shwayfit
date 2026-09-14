@@ -14,11 +14,12 @@ import (
 )
 
 var (
-	ErrNoActiveMembership = errors.New("no active organization membership")
-	ErrAlreadyProvisioned = errors.New("identity already has an organization membership")
-	ErrClientNotFound     = errors.New("client not found")
-	ErrClientForbidden    = errors.New("client is not assigned to this trainer")
-	ErrInvalidInput       = errors.New("invalid input")
+	ErrNoActiveMembership    = errors.New("no active organization membership")
+	ErrAlreadyProvisioned    = errors.New("identity already has an organization membership")
+	ErrClientNotFound        = errors.New("client not found")
+	ErrClientForbidden       = errors.New("client is not assigned to this trainer")
+	ErrPackageOptionNotFound = errors.New("package option not found")
+	ErrInvalidInput          = errors.New("invalid input")
 )
 
 type Organization struct {
@@ -58,6 +59,20 @@ type ClientInput struct {
 	Status             string `json:"status"`
 }
 
+// PackageOption is a reusable organization-scoped session allowance. Client
+// package instances will snapshot these values in a later slice.
+type PackageOption struct {
+	ID               string `json:"id"`
+	Name             string `json:"name"`
+	IncludedSessions int    `json:"includedSessions"`
+	Status           string `json:"status"`
+}
+
+type PackageOptionInput struct {
+	Name             string `json:"name"`
+	IncludedSessions int    `json:"includedSessions"`
+}
+
 // Store is deliberately small so domain rules can be tested without Firestore.
 type Store interface {
 	CreateFirstOrganization(context.Context, authn.Identity, string) (Organization, error)
@@ -67,6 +82,37 @@ type Store interface {
 	ListClients(context.Context, string) ([]Client, error)
 	GetClient(context.Context, string, string) (Client, error)
 	UpdateClient(context.Context, string, string, ClientInput) (Client, error)
+	CreatePackageOption(context.Context, string, PackageOptionInput) (PackageOption, error)
+	ListPackageOptions(context.Context, string) ([]PackageOption, error)
+	ArchivePackageOption(context.Context, string, string) (PackageOption, error)
+}
+
+func (s *Service) CreatePackageOption(ctx context.Context, identity authn.Identity, input PackageOptionInput) (PackageOption, error) {
+	if err := validatePackageOptionInput(input); err != nil {
+		return PackageOption{}, err
+	}
+	membership, err := s.activeMembership(ctx, identity.UID)
+	if err != nil {
+		return PackageOption{}, err
+	}
+	input.Name = strings.TrimSpace(input.Name)
+	return s.store.CreatePackageOption(ctx, membership.OrganizationID, input)
+}
+
+func (s *Service) ListPackageOptions(ctx context.Context, identity authn.Identity) ([]PackageOption, error) {
+	membership, err := s.activeMembership(ctx, identity.UID)
+	if err != nil {
+		return nil, err
+	}
+	return s.store.ListPackageOptions(ctx, membership.OrganizationID)
+}
+
+func (s *Service) ArchivePackageOption(ctx context.Context, identity authn.Identity, optionID string) (PackageOption, error) {
+	membership, err := s.activeMembership(ctx, identity.UID)
+	if err != nil {
+		return PackageOption{}, err
+	}
+	return s.store.ArchivePackageOption(ctx, membership.OrganizationID, optionID)
 }
 
 type Service struct{ store Store }
@@ -192,6 +238,13 @@ func validateClientInput(input ClientInput) error {
 		if err != nil || address.Address != input.Email || !optionalLength(input.Email, 254) {
 			return ErrInvalidInput
 		}
+	}
+	return nil
+}
+
+func validatePackageOptionInput(input PackageOptionInput) error {
+	if !validLength(strings.TrimSpace(input.Name), 2, 80) || input.IncludedSessions < 1 || input.IncludedSessions > 100 {
+		return ErrInvalidInput
 	}
 	return nil
 }

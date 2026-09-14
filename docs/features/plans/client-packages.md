@@ -6,6 +6,12 @@ Each organization has trainer-managed package options that define reusable sessi
 
 Options are organization-scoped. Archiving hides an option from future package assignment while preserving it for existing client records. Options that have already been used must not be deleted or changed in a way that rewrites a client's historical package.
 
+## Current delivery
+
+The first package slice provides trainer-managed options at `/packages`. Active organization members can create options with a name and one to one hundred included sessions, list active and archived options, and archive an option. The API is organization-scoped and requires an active Firebase-backed membership.
+
+This slice intentionally does not create a client package, record a balance, restore an archived option, edit an existing option, or process an appointment. Those actions need the transaction and immutable audit-event rules described below.
+
 ## Client packages
 
 When a trainer assigns a package to a client, ShwayFit creates a client-specific package instance. It copies the selected option's name and included-session count, then records the opening balance. Later edits to the reusable option never alter existing client balances or audit history.
