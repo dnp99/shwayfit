@@ -14,7 +14,9 @@ type Client = { id: string; firstName: string; lastName: string; email?: string;
 type ClientInput = Omit<Client, 'id'>
 
 const emptyClient: ClientInput = { firstName: '', lastName: '', email: '', phone: '', goals: '', notes: '', preferredStartTime: '', preferredEndTime: '', status: 'active' }
-const workspaceEyebrowClass = 'text-xs font-semibold tracking-[0.175em] text-secondary-foreground'
+// The shell owns this label on desktop; the page keeps it on mobile where the
+// desktop utility bar is intentionally hidden.
+const workspaceEyebrowClass = 'text-xs font-semibold tracking-[0.175em] text-secondary-foreground lg:hidden'
 
 export function TrainerWorkspace({ email }: { email: string }) {
   const [organization, setOrganization] = useState<Organization | null>(null)
@@ -79,7 +81,7 @@ export function TrainerWorkspace({ email }: { email: string }) {
   if (!organization) return <OrganizationSetup email={email} error={error} onSubmit={createOrganization} />
   const formValues = selectedClient ?? emptyClient
   return <section className="text-foreground">
-    <header className="flex flex-wrap items-end justify-between gap-5 border-b border-border pb-6"><div><p className={workspaceEyebrowClass}>TRAINER WORKSPACE</p><h1 className="mt-3 text-4xl font-semibold leading-none tracking-tight sm:text-5xl">{organization.displayName}</h1></div><p className="max-w-48 text-right text-sm text-muted-foreground break-all">{email}</p></header>
+    <header className="flex flex-wrap items-end justify-between gap-5 border-b border-border pb-6"><div><p className={workspaceEyebrowClass}>TRAINER WORKSPACE</p><h1 className="mt-3 text-4xl font-semibold leading-none tracking-tight sm:text-5xl">{organization.displayName}</h1></div><p className="max-w-48 text-right text-sm text-muted-foreground break-all lg:hidden">{email}</p></header>
     {error && <p className="mt-4 text-sm text-destructive" role="alert">{error}</p>}
     <div className="mx-auto mt-6 grid max-w-7xl gap-4 lg:grid-cols-[minmax(20rem,.85fr)_minmax(30rem,1.15fr)]">
       <ClientDirectory clients={clients} selectedClientID={selectedClient?.id} onSelect={(clientID) => setSelectedClient(clients.find((client) => client.id === clientID) ?? null)} />

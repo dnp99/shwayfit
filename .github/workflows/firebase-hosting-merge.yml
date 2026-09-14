@@ -37,12 +37,24 @@ jobs:
       - name: Validate backend
         working-directory: backend
         run: go test -race ./... && go vet ./...
+      - name: Detect backend changes
+        id: backend_changes
+        shell: bash
+        run: |
+          if git diff --quiet "${{ github.event.before }}" "${{ github.sha }}" -- backend; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No backend changes detected; skipping Cloud Run deployment."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Backend changes detected; Cloud Run deployment will run."
+          fi
       - uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.DEPLOYER_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v3
       - name: Deploy API to Cloud Run
+        if: steps.backend_changes.outputs.changed == 'true'
         run: >-
           gcloud run deploy "$CLOUD_RUN_SERVICE"
           --source backend
