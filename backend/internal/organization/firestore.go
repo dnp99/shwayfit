@@ -176,6 +176,70 @@ func (s *FirestoreStore) ArchivePackageOption(ctx context.Context, organizationI
 	return packageOptionFromData(ref.ID, snapshot.Data()), nil
 }
 
+func (s *FirestoreStore) AssignClientPackage(ctx context.Context, organizationID, clientID, optionID string) (clientPackage ClientPackage, resultErr error) {
+	clientRef := s.client.Collection("organizations").Doc(organizationID).Collection("clients").Doc(clientID)
+	optionRef := s.client.Collection("organizations").Doc(organizationID).Collection("packageOptions").Doc(optionID)
+	packageRef := clientRef.Collection("packages").NewDoc()
+	auditRef := packageRef.Collection("auditEvents").NewDoc()
+	resultErr = s.client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+		clientSnapshot, err := tx.Get(clientRef)
+		if status.Code(err) == codes.NotFound {
+			return ErrClientNotFound
+		}
+		if err != nil {
+			return err
+		}
+		if activePackageID, _ := clientSnapshot.Data()["activePackageId"].(string); activePackageID != "" {
+			return ErrActiveClientPackage
+		}
+		optionSnapshot, err := tx.Get(optionRef)
+		if status.Code(err) == codes.NotFound {
+			return ErrPackageOptionNotFound
+		}
+		if err != nil {
+			return err
+		}
+		option := packageOptionFromData(optionRef.ID, optionSnapshot.Data())
+		if option.Status != "active" {
+			return ErrPackageOptionArchived
+		}
+		clientPackage = ClientPackage{ID: packageRef.ID, PackageOptionID: option.ID, PackageName: option.Name, IncludedSessions: option.IncludedSessions, RemainingSessions: option.IncludedSessions, Status: "active"}
+		packageData := map[string]any{
+			"packageOptionId": clientPackage.PackageOptionID, "packageName": clientPackage.PackageName,
+			"includedSessions": clientPackage.IncludedSessions, "remainingSessions": clientPackage.RemainingSessions,
+			"status": clientPackage.Status, "createdAt": firestore.ServerTimestamp,
+		}
+		auditData := map[string]any{
+			"type": "opened", "balanceDelta": clientPackage.IncludedSessions,
+			"balanceAfter": clientPackage.RemainingSessions, "createdAt": firestore.ServerTimestamp,
+		}
+		if err := tx.Create(packageRef, packageData); err != nil {
+			return err
+		}
+		if err := tx.Create(auditRef, auditData); err != nil {
+			return err
+		}
+		return tx.Update(clientRef, []firestore.Update{{Path: "activePackageId", Value: packageRef.ID}, {Path: "updatedAt", Value: firestore.ServerTimestamp}})
+	})
+	return clientPackage, resultErr
+}
+
+func (s *FirestoreStore) ListClientPackages(ctx context.Context, organizationID, clientID string) ([]ClientPackage, error) {
+	iter := s.client.Collection("organizations").Doc(organizationID).Collection("clients").Doc(clientID).Collection("packages").OrderBy("createdAt", firestore.Desc).Limit(100).Documents(ctx)
+	defer iter.Stop()
+	packages := []ClientPackage{}
+	for {
+		snapshot, err := iter.Next()
+		if errors.Is(err, iterator.Done) {
+			return packages, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		packages = append(packages, clientPackageFromData(snapshot.Ref.ID, snapshot.Data()))
+	}
+}
+
 func clientData(input ClientInput) map[string]any {
 	return map[string]any{"firstName": input.FirstName, "lastName": input.LastName, "email": input.Email, "phone": input.Phone, "goals": input.Goals, "notes": input.Notes, "preferredStartTime": input.PreferredStartTime, "preferredEndTime": input.PreferredEndTime, "status": input.Status}
 }
@@ -205,4 +269,13 @@ func packageOptionFromData(id string, data map[string]any) PackageOption {
 	includedSessions, _ := data["includedSessions"].(int64)
 	status, _ := data["status"].(string)
 	return PackageOption{ID: id, Name: name, IncludedSessions: int(includedSessions), Status: status}
+}
+
+func clientPackageFromData(id string, data map[string]any) ClientPackage {
+	packageOptionID, _ := data["packageOptionId"].(string)
+	packageName, _ := data["packageName"].(string)
+	includedSessions, _ := data["includedSessions"].(int64)
+	remainingSessions, _ := data["remainingSessions"].(int64)
+	status, _ := data["status"].(string)
+	return ClientPackage{ID: id, PackageOptionID: packageOptionID, PackageName: packageName, IncludedSessions: int(includedSessions), RemainingSessions: int(remainingSessions), Status: status}
 }

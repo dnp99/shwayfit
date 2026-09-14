@@ -7,6 +7,7 @@ import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 import { Textarea } from '../../components/ui/textarea'
 import { ClientDirectory } from './ClientDirectory'
+import { ClientPackagePanel } from '../packages/ClientPackagePanel'
 
 type Organization = { id: string; displayName: string }
 type Client = { id: string; firstName: string; lastName: string; email?: string; phone?: string; goals?: string; notes?: string; preferredStartTime?: string; preferredEndTime?: string; status: 'active' | 'archived' }
@@ -82,14 +83,14 @@ export function TrainerWorkspace({ email }: { email: string }) {
     {error && <p className="mt-4 text-sm text-destructive" role="alert">{error}</p>}
     <div className="mx-auto mt-6 grid max-w-7xl gap-4 lg:grid-cols-[minmax(20rem,.85fr)_minmax(30rem,1.15fr)]">
       <ClientDirectory clients={clients} selectedClientID={selectedClient?.id} onSelect={(clientID) => setSelectedClient(clients.find((client) => client.id === clientID) ?? null)} />
-      <Card aria-labelledby="client-form-heading"><CardHeader><div><p className={workspaceEyebrowClass}>{selectedClient ? 'EDIT CLIENT' : 'NEW CLIENT'}</p><h2 id="client-form-heading" className="mt-1 text-xl font-semibold tracking-tight">{selectedClient ? `${selectedClient.firstName} ${selectedClient.lastName}` : 'Add a client'}</h2></div>{selectedClient && <Button type="button" variant="ghost" onClick={() => setSelectedClient(null)}>New client</Button>}</CardHeader><CardContent><form className="grid gap-4" onSubmit={saveClient} key={selectedClient?.id ?? 'new'}>
+      <div className="grid gap-4"><Card aria-labelledby="client-form-heading"><CardHeader><div><p className={workspaceEyebrowClass}>{selectedClient ? 'EDIT CLIENT' : 'NEW CLIENT'}</p><h2 id="client-form-heading" className="mt-1 text-xl font-semibold tracking-tight">{selectedClient ? `${selectedClient.firstName} ${selectedClient.lastName}` : 'Add a client'}</h2></div>{selectedClient && <Button type="button" variant="ghost" onClick={() => setSelectedClient(null)}>New client</Button>}</CardHeader><CardContent><form className="grid gap-4" onSubmit={saveClient} key={selectedClient?.id ?? 'new'}>
         <div className="grid gap-4 sm:grid-cols-2"><Label>First name<Input required maxLength={80} name="firstName" defaultValue={formValues.firstName} /></Label><Label>Last name<Input required maxLength={80} name="lastName" defaultValue={formValues.lastName} /></Label></div>
         <div className="grid gap-4 sm:grid-cols-2"><Label>Email <span className="text-xs font-normal text-muted-foreground">optional</span><Input type="email" maxLength={254} name="email" defaultValue={formValues.email} /></Label><Label>Phone <span className="text-xs font-normal text-muted-foreground">optional</span><Input maxLength={40} name="phone" defaultValue={formValues.phone} /></Label></div>
         <fieldset className="grid gap-3 rounded-xl border border-border p-4"><legend className="px-1 text-sm font-medium">Preferred time window <span className="text-xs font-normal text-muted-foreground">optional</span></legend><p className="text-sm text-muted-foreground">A scheduling preference only. It does not book a session.</p><div className="grid gap-4 sm:grid-cols-2"><Label>Preferred start<Input type="time" name="preferredStartTime" defaultValue={formValues.preferredStartTime} /></Label><Label>Preferred end<Input type="time" name="preferredEndTime" defaultValue={formValues.preferredEndTime} /></Label></div></fieldset>
         <Label>Training goals <span className="text-xs font-normal text-muted-foreground">optional</span><Textarea maxLength={2000} name="goals" defaultValue={formValues.goals} /></Label><Label>Private notes <span className="text-xs font-normal text-muted-foreground">optional</span><Textarea maxLength={4000} name="notes" defaultValue={formValues.notes} /></Label>
         <Label>Status<select className="min-h-11 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring" name="status" defaultValue={formValues.status}><option value="active">Active</option><option value="archived">Archived</option></select></Label>
         <Button className="justify-between sm:w-fit" type="submit">{selectedClient ? 'Save changes' : 'Add client'} <span aria-hidden="true">→</span></Button>
-      </form></CardContent></Card>
+      </form></CardContent></Card>{selectedClient && <ClientPackagePanel key={selectedClient.id} clientID={selectedClient.id} clientName={`${selectedClient.firstName} ${selectedClient.lastName}`} />}</div>
     </div>
   </section>
 }

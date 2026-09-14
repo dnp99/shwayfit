@@ -43,6 +43,12 @@ func (s *fakeStore) ListPackageOptions(_ context.Context, _ string) ([]PackageOp
 func (s *fakeStore) ArchivePackageOption(_ context.Context, _ string, id string) (PackageOption, error) {
 	return PackageOption{ID: id, Name: "Ten sessions", IncludedSessions: 10, Status: "archived"}, nil
 }
+func (s *fakeStore) AssignClientPackage(_ context.Context, _ string, _ string, optionID string) (ClientPackage, error) {
+	return ClientPackage{ID: "package-a", PackageOptionID: optionID, PackageName: "Five sessions", IncludedSessions: 5, RemainingSessions: 5, Status: "active"}, nil
+}
+func (s *fakeStore) ListClientPackages(_ context.Context, _ string, _ string) ([]ClientPackage, error) {
+	return []ClientPackage{}, nil
+}
 
 func TestClientAccessRejectsUnassignedTrainer(t *testing.T) {
 	service := NewService(&fakeStore{membership: Membership{OrganizationID: "organization-a", Role: "trainer", Active: true}, client: Client{ID: "client-a", AssignedTrainerUID: "other-trainer"}})
@@ -119,5 +125,21 @@ func TestPackageOptionValidatesNameAndSessionCount(t *testing.T) {
 	}
 	if err := validatePackageOptionInput(PackageOptionInput{Name: "Five sessions", IncludedSessions: 5}); err != nil {
 		t.Fatalf("valid package option error = %v", err)
+	}
+}
+
+func TestAssignClientPackageRejectsUnassignedTrainer(t *testing.T) {
+	service := NewService(&fakeStore{membership: Membership{OrganizationID: "organization-a", Role: "trainer", Active: true}, client: Client{ID: "client-a", AssignedTrainerUID: "other-trainer"}})
+	_, err := service.AssignClientPackage(context.Background(), authn.Identity{UID: "trainer-a"}, "client-a", "option-a")
+	if err != ErrClientForbidden {
+		t.Fatalf("error = %v; want %v", err, ErrClientForbidden)
+	}
+}
+
+func TestAssignClientPackageRequiresOption(t *testing.T) {
+	service := NewService(&fakeStore{membership: Membership{OrganizationID: "organization-a", Role: "owner", Active: true}, client: Client{ID: "client-a"}})
+	_, err := service.AssignClientPackage(context.Background(), authn.Identity{UID: "owner-a"}, "client-a", "")
+	if err != ErrInvalidInput {
+		t.Fatalf("error = %v; want %v", err, ErrInvalidInput)
 	}
 }

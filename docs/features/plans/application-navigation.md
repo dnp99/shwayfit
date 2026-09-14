@@ -20,9 +20,11 @@ ShwayFit has a public site and five authenticated product areas:
 
 The five product routes require a signed-in Firebase user. A frontend route guard improves navigation by directing an unauthenticated visitor to `/sign-in`, but it does not authorize access to data. The Go API remains responsible for Firebase token verification, active organization membership, membership role, and client assignment checks on every business request.
 
-## Implementation order
+## Current navigation shell
 
-Adopt React Router when work begins on the shared authenticated application shell. Build the client workspace at `/clients` first, followed by package options and client packages at `/packages`, then scheduling, the home overview, and settings. Keep the authenticated navigation phone-first: it must support direct access to these areas without requiring a desktop sidebar.
+Authenticated pages share a responsive application shell. Desktop uses a persistent sidebar with Today, Clients, and Schedule as daily navigation. Mobile uses the equivalent bottom navigation. Packages and Settings remain direct routes, but are accessed through More so that package-template setup does not compete with the trainer's daily workflow. The header retains the ShwayFit brand and theme control on narrow screens.
+
+The shell deliberately uses the existing React Router routes and does not change API calls, authentication, or domain behaviour. Future appointment work can add a dedicated primary action without changing route ownership.
 
 ## Delivery slices
 
