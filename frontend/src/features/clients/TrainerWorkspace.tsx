@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { getFirebaseAuth } from '../../lib/firebase'
+import { api } from '../../lib/api'
 import { Button } from '../../components/ui/button'
 import { Card, CardContent, CardHeader } from '../../components/ui/card'
 import { Input } from '../../components/ui/input'
@@ -14,20 +14,6 @@ type ClientInput = Omit<Client, 'id'>
 
 const emptyClient: ClientInput = { firstName: '', lastName: '', email: '', phone: '', goals: '', notes: '', preferredStartTime: '', preferredEndTime: '', status: 'active' }
 const workspaceEyebrowClass = 'text-xs font-semibold tracking-[0.175em] text-secondary-foreground'
-
-async function api(path: string, options: RequestInit = {}) {
-  const user = getFirebaseAuth().currentUser
-  if (!user) throw new Error('Your sign-in has ended. Please sign in again.')
-  const response = await fetch(path, {
-    ...options,
-    headers: { Authorization: `Bearer ${await user.getIdToken()}`, 'Content-Type': 'application/json', ...options.headers },
-  })
-  if (!response.ok) {
-    const body = await response.json().catch(() => null) as { error?: { message?: string } } | null
-    throw new Error(body?.error?.message ?? 'ShwayFit could not complete this request.')
-  }
-  return response.status === 204 ? null : response.json()
-}
 
 export function TrainerWorkspace({ email }: { email: string }) {
   const [organization, setOrganization] = useState<Organization | null>(null)

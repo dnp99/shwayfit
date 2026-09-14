@@ -129,6 +129,55 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Client' }
+  /organizations/current/package-options:
+    get:
+      operationId: listPackageOptions
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Reusable package options for the caller's organization.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [packageOptions]
+                properties:
+                  packageOptions:
+                    type: array
+                    items: { $ref: '#/components/schemas/PackageOption' }
+    post:
+      operationId: createPackageOption
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PackageOptionInput' }
+      responses:
+        '201':
+          description: Package option created.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PackageOption' }
+  /organizations/current/package-options/{optionID}/archive:
+    parameters:
+      - name: optionID
+        in: path
+        required: true
+        schema: { type: string }
+    patch:
+      operationId: archivePackageOption
+      summary: Archives an option so it cannot be assigned to a future client package.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Package option archived.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PackageOption' }
 components:
   securitySchemes:
     bearerAuth:
@@ -173,6 +222,20 @@ components:
           required: [id]
           properties:
             id: { type: string }
+    PackageOptionInput:
+      type: object
+      required: [name, includedSessions]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 80 }
+        includedSessions: { type: integer, minimum: 1, maximum: 100 }
+    PackageOption:
+      allOf:
+        - $ref: '#/components/schemas/PackageOptionInput'
+        - type: object
+          required: [id, status]
+          properties:
+            id: { type: string }
+            status: { type: string, enum: [active, archived] }
     Error:
       type: object
       required: [error]

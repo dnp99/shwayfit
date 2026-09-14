@@ -133,6 +133,49 @@ func (s *FirestoreStore) UpdateClient(ctx context.Context, organizationID, clien
 	return clientFromData(snapshot.Ref.ID, snapshot.Data()), nil
 }
 
+func (s *FirestoreStore) CreatePackageOption(ctx context.Context, organizationID string, input PackageOptionInput) (PackageOption, error) {
+	ref := s.client.Collection("organizations").Doc(organizationID).Collection("packageOptions").NewDoc()
+	option := PackageOption{ID: ref.ID, Name: input.Name, IncludedSessions: input.IncludedSessions, Status: "active"}
+	data := map[string]any{
+		"name": option.Name, "includedSessions": option.IncludedSessions, "status": option.Status,
+		"createdAt": firestore.ServerTimestamp, "updatedAt": firestore.ServerTimestamp,
+	}
+	if _, err := ref.Create(ctx, data); err != nil {
+		return PackageOption{}, err
+	}
+	return option, nil
+}
+
+func (s *FirestoreStore) ListPackageOptions(ctx context.Context, organizationID string) ([]PackageOption, error) {
+	iter := s.client.Collection("organizations").Doc(organizationID).Collection("packageOptions").OrderBy("name", firestore.Asc).Limit(100).Documents(ctx)
+	defer iter.Stop()
+	options := []PackageOption{}
+	for {
+		snapshot, err := iter.Next()
+		if errors.Is(err, iterator.Done) {
+			return options, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		options = append(options, packageOptionFromData(snapshot.Ref.ID, snapshot.Data()))
+	}
+}
+
+func (s *FirestoreStore) ArchivePackageOption(ctx context.Context, organizationID, optionID string) (PackageOption, error) {
+	ref := s.client.Collection("organizations").Doc(organizationID).Collection("packageOptions").Doc(optionID)
+	if _, err := ref.Update(ctx, []firestore.Update{{Path: "status", Value: "archived"}, {Path: "updatedAt", Value: firestore.ServerTimestamp}}); status.Code(err) == codes.NotFound {
+		return PackageOption{}, ErrPackageOptionNotFound
+	} else if err != nil {
+		return PackageOption{}, err
+	}
+	snapshot, err := ref.Get(ctx)
+	if err != nil {
+		return PackageOption{}, err
+	}
+	return packageOptionFromData(ref.ID, snapshot.Data()), nil
+}
+
 func clientData(input ClientInput) map[string]any {
 	return map[string]any{"firstName": input.FirstName, "lastName": input.LastName, "email": input.Email, "phone": input.Phone, "goals": input.Goals, "notes": input.Notes, "preferredStartTime": input.PreferredStartTime, "preferredEndTime": input.PreferredEndTime, "status": input.Status}
 }
@@ -155,4 +198,11 @@ func clientFromData(id string, data map[string]any) Client {
 	status, _ := data["status"].(string)
 	assignedTrainerUID, _ := data["assignedTrainerUid"].(string)
 	return Client{ID: id, FirstName: firstName, LastName: lastName, Email: email, Phone: phone, Goals: goals, Notes: notes, PreferredStartTime: preferredStartTime, PreferredEndTime: preferredEndTime, Status: status, AssignedTrainerUID: assignedTrainerUID}
+}
+
+func packageOptionFromData(id string, data map[string]any) PackageOption {
+	name, _ := data["name"].(string)
+	includedSessions, _ := data["includedSessions"].(int64)
+	status, _ := data["status"].(string)
+	return PackageOption{ID: id, Name: name, IncludedSessions: int(includedSessions), Status: status}
 }

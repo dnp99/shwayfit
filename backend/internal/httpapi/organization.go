@@ -74,6 +74,38 @@ func registerOrganizationRoutes(mux *http.ServeMux, verifier authn.Verifier, ser
 		}
 		writeJSON(w, http.StatusOK, client)
 	})))
+	registerPackageOptionRoutes(mux, verifier, service)
+}
+
+func registerPackageOptionRoutes(mux *http.ServeMux, verifier authn.Verifier, service *organization.Service) {
+	mux.Handle("GET /api/v1/organizations/current/package-options", requireIdentity(verifier, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		options, err := service.ListPackageOptions(r.Context(), identityFromContext(r.Context()))
+		if err != nil {
+			writeOrganizationError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"packageOptions": options})
+	})))
+	mux.Handle("POST /api/v1/organizations/current/package-options", requireIdentity(verifier, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var input organization.PackageOptionInput
+		if !decodeJSON(w, r, &input) {
+			return
+		}
+		option, err := service.CreatePackageOption(r.Context(), identityFromContext(r.Context()), input)
+		if err != nil {
+			writeOrganizationError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusCreated, option)
+	})))
+	mux.Handle("PATCH /api/v1/organizations/current/package-options/{optionID}/archive", requireIdentity(verifier, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		option, err := service.ArchivePackageOption(r.Context(), identityFromContext(r.Context()), r.PathValue("optionID"))
+		if err != nil {
+			writeOrganizationError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, option)
+	})))
 }
 
 func decodeJSON(w http.ResponseWriter, r *http.Request, target any) bool {
@@ -110,6 +142,8 @@ func writeOrganizationError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusNotFound, "client_not_found", "Client not found")
 	case errors.Is(err, organization.ErrClientForbidden):
 		writeError(w, http.StatusForbidden, "forbidden", "You do not have access to this client")
+	case errors.Is(err, organization.ErrPackageOptionNotFound):
+		writeError(w, http.StatusNotFound, "package_option_not_found", "Package option not found")
 	default:
 		writeError(w, http.StatusInternalServerError, "internal_error", "ShwayFit could not complete this request")
 	}

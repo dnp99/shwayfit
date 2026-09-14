@@ -6,7 +6,19 @@ Firebase Authentication provides trainer identity. The React app receives a Fire
 
 ## Configuration
 
-The Firebase web app is named `shwayfit-web`. Copy `frontend/.env.example` to `frontend/.env.local` for local work. Firebase web configuration is public browser metadata, not a server credential.
+The Firebase web app is named `shwayfit-web`. Copy `frontend/.env.example` to `frontend/.env.local` for local work. Firebase web configuration is public browser metadata, not a server credential. Vite embeds `VITE_*` values in the browser bundle, so moving the Firebase web API key to a GitHub secret or removing its source fallback would not make it private and would break the current build unless an equivalent public configuration source were added.
+
+The Firebase-created browser API key is protected in Google Cloud by both API and website restrictions. Its API allowlist includes Firebase Authentication (`identitytoolkit.googleapis.com` and `securetoken.googleapis.com`) and Firebase-managed services. Its browser referrer allowlist is limited to:
+
+- `https://shwayfit.app/*`
+- `https://shwayfit-f7f0b.web.app/*`
+- `https://shwayfit-f7f0b.firebaseapp.com/*`
+- `http://localhost/*`
+- `http://127.0.0.1/*`
+
+Review API-key usage in Google Cloud before rotating the key. Rotate only for unexpected usage or an untrusted configuration change; rotating a Firebase browser key is an availability change and must be followed by a sign-in check on the production domain.
+
+Browser clients cannot read or write Firestore. `firestore.rules` denies every direct request, and the Go API accesses business data with its server runtime identity after authenticating and authorizing each request.
 
 Cloud Run uses Application Default Credentials from its runtime service account. No service-account JSON key belongs in this repository or the frontend.
 
