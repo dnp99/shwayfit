@@ -5,10 +5,11 @@ import { Button } from '../../components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog'
 import { cn } from '../../lib/utils'
 
-const primaryItems = [
+const desktopItems = [
   { to: '/home', label: 'Today', icon: Home },
   { to: '/clients', label: 'Clients', icon: Users },
-  { to: '/schedule', label: 'Schedule', icon: CalendarDays },
+  { to: '/schedule', label: 'Calendar', icon: CalendarDays },
+  { to: '/packages', label: 'Packages', icon: Package },
 ] as const
 
 const moreItems = [
@@ -66,18 +67,25 @@ export function DesktopSidebar({ email }: { email: string }) {
   return <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar p-4 lg:flex" aria-label="Product navigation">
     <ProductBrand />
     <nav className="mt-10 grid gap-1" aria-label="Primary product navigation">
-      {primaryItems.map(({ to, label, icon: Icon }) => <NavLink className={({ isActive }) => navigationClass(isActive)} key={to} to={to}>
+      {desktopItems.map(({ to, label, icon: Icon }) => <NavLink className={({ isActive }) => navigationClass(isActive)} key={to} to={to}>
         <Icon className="size-5" aria-hidden="true" />{label}
       </NavLink>)}
     </nav>
     <div className="mt-auto grid gap-2 border-t border-sidebar-border pt-4">
-      <MoreNavigation />
-      <div className="flex items-center justify-between gap-2 px-2">
-        <p className="min-w-0 truncate text-xs text-muted-foreground" title={email}>{email}</p>
-        <ThemeToggle />
+      <NavLink className={({ isActive }) => navigationClass(isActive)} to="/settings"><Settings className="size-5" aria-hidden="true" />Settings</NavLink>
+      <div className="flex min-h-11 items-center gap-3 px-2">
+        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground" aria-hidden="true">{email.slice(0, 1).toUpperCase() || 'T'}</span>
+        <p className="min-w-0 truncate text-xs text-muted-foreground" title={email}>{email || 'Trainer'}</p>
       </div>
     </div>
   </aside>
+}
+
+export function DesktopUtilityBar() {
+  return <header className="hidden min-h-20 items-center justify-between border-b border-border px-10 lg:flex">
+    <p className="text-xs font-semibold tracking-[0.175em] text-secondary-foreground">TRAINER WORKSPACE</p>
+    <div className="flex items-center gap-3"><span className="text-sm text-muted-foreground">Appearance</span><ThemeToggle /></div>
+  </header>
 }
 
 export function MobileHeader() {
@@ -89,7 +97,7 @@ export function MobileHeader() {
 
 export function MobileBottomNav() {
   return <nav className="fixed inset-x-0 bottom-0 z-30 grid min-h-16 grid-cols-4 border-t border-border bg-card/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur lg:hidden" aria-label="Primary product navigation">
-    {primaryItems.map(({ to, label, icon: Icon }) => <NavLink className={({ isActive }) => cn('flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-lg px-2 text-[0.6875rem] font-medium transition-colors focus-visible:outline-3 focus-visible:outline-ring focus-visible:outline-offset-[-3px]', isActive ? 'text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground')} key={to} to={to}>
+    {desktopItems.slice(0, 3).map(({ to, label, icon: Icon }) => <NavLink className={({ isActive }) => cn('flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-lg px-2 text-[0.6875rem] font-medium transition-colors focus-visible:outline-3 focus-visible:outline-ring focus-visible:outline-offset-[-3px]', isActive ? 'text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground')} key={to} to={to}>
       <Icon className="size-5" aria-hidden="true" />{label}
     </NavLink>)}
     <MoreNavigation compact />

@@ -2,9 +2,9 @@
 .site-header { display: flex; align-items: center; justify-content: space-between; }
 .brand { align-items: center; color: var(--foreground); display: inline-flex; font-size: 23px; font-weight: 600; gap: 9px; letter-spacing: -1px; text-decoration: none; }
 .brand-mark { align-items: center; background: var(--primary); border-radius: 11px; color: var(--brand-lime); display: inline-flex; font-family: Georgia, serif; font-size: 29px; height: 35px; justify-content: center; line-height: 1; width: 35px; }
-nav { align-items: center; display: flex; gap: 24px; }
-nav a { align-items: center; color: var(--foreground); display: inline-flex; font-size: 14px; font-weight: 500; min-height: 44px; text-decoration: none; }
-nav a:hover { color: var(--primary); text-decoration: underline; text-underline-offset: 4px; }
+.site-header nav { align-items: center; display: flex; gap: 24px; }
+.site-header nav a { align-items: center; color: var(--foreground); display: inline-flex; font-size: 14px; font-weight: 500; min-height: 44px; text-decoration: none; }
+.site-header nav a:hover { color: var(--primary); text-decoration: underline; text-underline-offset: 4px; }
 .hero { display: grid; gap: 44px; padding: 72px 0 66px; }
 .eyebrow { color: var(--secondary-foreground); font-size: 10px; font-weight: 600; letter-spacing: 1.75px; line-height: 1.7; margin: 0; }
 .site-shell h1, .site-shell h2 { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; }
@@ -71,6 +71,6 @@ footer p { color: var(--muted-foreground); font-size: 11px; margin: 0; }
 }
 
 @media (max-width: 520px) {
-  nav { gap: 20px; }
-  nav a[href='#how-it-helps'], nav a[href='#pilot'] { display: none; }
+  .site-header nav { gap: 20px; }
+  .site-header nav a[href='#how-it-helps'], .site-header nav a[href='#pilot'] { display: none; }
 }

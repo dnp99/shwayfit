@@ -66,7 +66,7 @@ export function PackageOptions() {
       <div>
       <p className="text-xs font-semibold tracking-[0.175em] text-secondary-foreground">PACKAGE OPTIONS</p>
       <h1 className="mt-2 text-3xl font-semibold tracking-tight">Session packages</h1>
-      <p className="mt-3 max-w-2xl leading-7 text-muted-foreground">Create the reusable session allowances you offer. Assigning a package to a client and tracking its balance comes next.</p>
+      <p className="mt-3 max-w-2xl leading-7 text-muted-foreground">Create the reusable session allowances you offer. Assign packages from each client profile to track their current balance.</p>
       </div>
       <PackageOptionDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} isSaving={isSaving} needsFirstPackage={needsFirstPackage} onSubmit={createOption} />
     </header>
