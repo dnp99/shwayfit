@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { api } from '../../lib/api'
 import { Button } from '../../components/ui/button'
-import { Card, CardContent, CardHeader } from '../../components/ui/card'
+import { Card, CardContent } from '../../components/ui/card'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../components/ui/dialog'
 import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 import { Textarea } from '../../components/ui/textarea'
@@ -14,12 +15,15 @@ type Client = { id: string; firstName: string; lastName: string; email?: string;
 type ClientInput = Omit<Client, 'id'>
 
 const emptyClient: ClientInput = { firstName: '', lastName: '', email: '', phone: '', goals: '', notes: '', preferredStartTime: '', preferredEndTime: '', status: 'active' }
-const workspaceEyebrowClass = 'text-xs font-semibold tracking-[0.175em] text-secondary-foreground'
+// The shell owns this label on desktop; the page keeps it on mobile where the
+// desktop utility bar is intentionally hidden.
+const workspaceEyebrowClass = 'text-xs font-semibold tracking-[0.175em] text-secondary-foreground lg:hidden'
 
 export function TrainerWorkspace({ email }: { email: string }) {
   const [organization, setOrganization] = useState<Organization | null>(null)
   const [clients, setClients] = useState<Client[]>([])
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
+  const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -70,6 +74,7 @@ export function TrainerWorkspace({ email }: { email: string }) {
       const path = selectedClient ? `/api/v1/organizations/current/clients/${selectedClient.id}` : '/api/v1/organizations/current/clients'
       const client = await api(path, { method: selectedClient ? 'PATCH' : 'POST', body: JSON.stringify(input) }) as Client
       setClients((current) => selectedClient ? current.map((item) => item.id === client.id ? client : item) : [...current, client].sort((a, b) => a.lastName.localeCompare(b.lastName)))
+      setIsEditorOpen(false)
       setSelectedClient(null)
       form.reset()
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'ShwayFit could not save this client.') }
@@ -77,22 +82,35 @@ export function TrainerWorkspace({ email }: { email: string }) {
 
   if (isLoading) return <section className="flex min-h-screen items-center justify-center bg-background p-5 text-muted-foreground"><p>Preparing your workspace…</p></section>
   if (!organization) return <OrganizationSetup email={email} error={error} onSubmit={createOrganization} />
-  const formValues = selectedClient ?? emptyClient
   return <section className="text-foreground">
-    <header className="flex flex-wrap items-end justify-between gap-5 border-b border-border pb-6"><div><p className={workspaceEyebrowClass}>TRAINER WORKSPACE</p><h1 className="mt-3 text-4xl font-semibold leading-none tracking-tight sm:text-5xl">{organization.displayName}</h1></div><p className="max-w-48 text-right text-sm text-muted-foreground break-all">{email}</p></header>
     {error && <p className="mt-4 text-sm text-destructive" role="alert">{error}</p>}
-    <div className="mx-auto mt-6 grid max-w-7xl gap-4 lg:grid-cols-[minmax(20rem,.85fr)_minmax(30rem,1.15fr)]">
-      <ClientDirectory clients={clients} selectedClientID={selectedClient?.id} onSelect={(clientID) => setSelectedClient(clients.find((client) => client.id === clientID) ?? null)} />
-      <div className="grid gap-4"><Card aria-labelledby="client-form-heading"><CardHeader><div><p className={workspaceEyebrowClass}>{selectedClient ? 'EDIT CLIENT' : 'NEW CLIENT'}</p><h2 id="client-form-heading" className="mt-1 text-xl font-semibold tracking-tight">{selectedClient ? `${selectedClient.firstName} ${selectedClient.lastName}` : 'Add a client'}</h2></div>{selectedClient && <Button type="button" variant="ghost" onClick={() => setSelectedClient(null)}>New client</Button>}</CardHeader><CardContent><form className="grid gap-4" onSubmit={saveClient} key={selectedClient?.id ?? 'new'}>
+    <ClientDirectory clients={clients} selectedClientID={selectedClient?.id} onAdd={() => { setSelectedClient(null); setIsEditorOpen(true) }} onSelect={(clientID) => { setSelectedClient(clients.find((client) => client.id === clientID) ?? null); setIsEditorOpen(true) }} />
+    <ClientEditorDialog client={selectedClient} isOpen={isEditorOpen} onOpenChange={setIsEditorOpen} onSubmit={saveClient} />
+  </section>
+}
+
+function ClientEditorDialog({ client, isOpen, onOpenChange, onSubmit }: { client: Client | null; isOpen: boolean; onOpenChange: (open: boolean) => void; onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void> }) {
+  const formValues = client ?? emptyClient
+  const isEditing = Boolean(client)
+
+  return <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-3xl overflow-y-auto">
+      <DialogHeader>
+        <p className="text-xs font-semibold tracking-[0.175em] text-secondary-foreground">{isEditing ? 'CLIENT DETAILS' : 'NEW CLIENT'}</p>
+        <DialogTitle>{isEditing ? `${client?.firstName} ${client?.lastName}` : 'Add a client'}</DialogTitle>
+        <DialogDescription>{isEditing ? 'Update contact details, goals, scheduling preferences, and package balance.' : 'Add the details you need to begin managing this client.'}</DialogDescription>
+      </DialogHeader>
+      <form className="grid gap-4" key={client?.id ?? 'new'} onSubmit={(event) => void onSubmit(event)}>
         <div className="grid gap-4 sm:grid-cols-2"><Label>First name<Input required maxLength={80} name="firstName" defaultValue={formValues.firstName} /></Label><Label>Last name<Input required maxLength={80} name="lastName" defaultValue={formValues.lastName} /></Label></div>
         <div className="grid gap-4 sm:grid-cols-2"><Label>Email <span className="text-xs font-normal text-muted-foreground">optional</span><Input type="email" maxLength={254} name="email" defaultValue={formValues.email} /></Label><Label>Phone <span className="text-xs font-normal text-muted-foreground">optional</span><Input maxLength={40} name="phone" defaultValue={formValues.phone} /></Label></div>
         <fieldset className="grid gap-3 rounded-xl border border-border p-4"><legend className="px-1 text-sm font-medium">Preferred time window <span className="text-xs font-normal text-muted-foreground">optional</span></legend><p className="text-sm text-muted-foreground">A scheduling preference only. It does not book a session.</p><div className="grid gap-4 sm:grid-cols-2"><Label>Preferred start<Input type="time" name="preferredStartTime" defaultValue={formValues.preferredStartTime} /></Label><Label>Preferred end<Input type="time" name="preferredEndTime" defaultValue={formValues.preferredEndTime} /></Label></div></fieldset>
         <Label>Training goals <span className="text-xs font-normal text-muted-foreground">optional</span><Textarea maxLength={2000} name="goals" defaultValue={formValues.goals} /></Label><Label>Private notes <span className="text-xs font-normal text-muted-foreground">optional</span><Textarea maxLength={4000} name="notes" defaultValue={formValues.notes} /></Label>
         <Label>Status<select className="min-h-11 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring" name="status" defaultValue={formValues.status}><option value="active">Active</option><option value="archived">Archived</option></select></Label>
-        <Button className="justify-between sm:w-fit" type="submit">{selectedClient ? 'Save changes' : 'Add client'} <span aria-hidden="true">→</span></Button>
-      </form></CardContent></Card>{selectedClient && <ClientPackagePanel key={selectedClient.id} clientID={selectedClient.id} clientName={`${selectedClient.firstName} ${selectedClient.lastName}`} />}</div>
-    </div>
-  </section>
+        <Button className="justify-between sm:w-fit" type="submit">{isEditing ? 'Save changes' : 'Add client'} <span aria-hidden="true">→</span></Button>
+      </form>
+      {client && <ClientPackagePanel clientID={client.id} clientName={`${client.firstName} ${client.lastName}`} />}
+    </DialogContent>
+  </Dialog>
 }
 
 function OrganizationSetup({ email, error, onSubmit }: { email: string; error: string | null; onSubmit: (event: FormEvent<HTMLFormElement>) => void }) {

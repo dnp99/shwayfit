@@ -30,7 +30,7 @@ gcloud run deploy shwayfit-api \
 
 ## GitHub Actions deployment
 
-`.github/workflows/firebase-hosting-merge.yml` is the production release workflow. On a push to `main`, it validates the React and Go applications, deploys the API to Cloud Run, then deploys Firebase Hosting. This order prevents Hosting from serving a frontend that requires an API revision which is not live yet. Pull requests deploy only a Firebase Hosting preview; they never change the shared Cloud Run service.
+`.github/workflows/firebase-hosting-merge.yml` is the production release workflow. On a push to `main`, it validates the React and Go applications, checks whether files under `backend/` changed, deploys the API to Cloud Run only when they did, and then deploys Firebase Hosting. This avoids creating a redundant Cloud Run revision for frontend-only changes while preserving the API-before-Hosting order when both change. Pull requests deploy only a Firebase Hosting preview; they never change the shared Cloud Run service.
 
 GitHub authenticates to Google Cloud through Workload Identity Federation, rather than a downloaded service-account key. The bootstrap uses a dedicated `github-actions-deployer` identity and restricts federation to this repository:
 
