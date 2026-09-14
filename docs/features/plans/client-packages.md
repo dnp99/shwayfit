@@ -8,7 +8,7 @@ Options are organization-scoped. Archiving hides an option from future package a
 
 ## Current delivery
 
-The first package slice provides trainer-managed options at `/packages`. Active organization members can create options with a name and one to one hundred included sessions, list active and archived options, and archive an option. The API is organization-scoped and requires an active Firebase-backed membership.
+The first package slice provides trainer-managed options at `/packages`. Active organization members can create options with a name and one to one hundred included sessions, list active and archived options, and archive an option. When no options exist, the screen prompts the trainer to create their first package in a reusable dialog. The API is organization-scoped and requires an active Firebase-backed membership.
 
 This slice intentionally does not create a client package, record a balance, restore an archived option, edit an existing option, or process an appointment. Those actions need the transaction and immutable audit-event rules described below.
 
