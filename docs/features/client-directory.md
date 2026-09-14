@@ -1,7 +1,7 @@
 # Client directory
 
-The authenticated workspace keeps the client directory visible while a trainer edits a selected client's details on larger screens. The directory shows each client's name, status, and optional preferred time window, then opens the selected record in the adjacent detail pane.
+The authenticated workspace presents a directory-first client page. Trainers can search active or archived records, scan responsive client cards, and open a selected record in a focused editor dialog. Cards show only data the client API provides: name, training goals, status, and optional preferred time window. Appointment timing and package balance summaries stay out of cards until the corresponding API data is available.
 
-On a phone, the same content remains a vertical flow: the directory appears before the detail pane, preserving readable rows and normal touch targets without requiring horizontal scrolling.
+The same view adapts to a vertical card list on phones. The editor dialog keeps normal touch targets and scrolls within the viewport; package assignment remains available for an existing client from that dialog.
 
-The directory does not add appointment scheduling, calendar views, sorting, filtering, or client deletion.
+The directory does not add appointment scheduling, calendar views, client deletion, or fictional dashboard data.
