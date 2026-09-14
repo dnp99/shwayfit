@@ -114,6 +114,50 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Client' }
+  /organizations/current/clients/{clientID}/packages:
+    parameters:
+      - name: clientID
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: listClientPackages
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current and historical client package records.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [packages]
+                properties:
+                  packages:
+                    type: array
+                    items: { $ref: '#/components/schemas/ClientPackage' }
+    post:
+      operationId: assignClientPackage
+      summary: Assigns the selected active option as the client's one active package.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [packageOptionId]
+              properties:
+                packageOptionId: { type: string }
+      responses:
+        '201':
+          description: Client package opened with an opening audit event.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ClientPackage' }
+        '409':
+          description: The option is archived or the client already has an active package.
     patch:
       operationId: updateClient
       security:
@@ -236,6 +280,16 @@ components:
           properties:
             id: { type: string }
             status: { type: string, enum: [active, archived] }
+    ClientPackage:
+      type: object
+      required: [id, packageOptionId, packageName, includedSessions, remainingSessions, status]
+      properties:
+        id: { type: string }
+        packageOptionId: { type: string }
+        packageName: { type: string }
+        includedSessions: { type: integer }
+        remainingSessions: { type: integer }
+        status: { type: string, enum: [active, completed] }
     Error:
       type: object
       required: [error]

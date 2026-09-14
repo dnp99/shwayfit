@@ -16,4 +16,6 @@ This slice intentionally does not create a client package, record a balance, res
 
 When a trainer assigns a package to a client, ShwayFit creates a client-specific package instance. It copies the selected option's name and included-session count, then records the opening balance. Later edits to the reusable option never alter existing client balances or audit history.
 
+Each client may have one active package. The opening operation runs as one Firestore transaction: it confirms that the selected option remains active, rejects a second active package, copies the allowance into the client package, sets the client's active-package reference, and writes an immutable `opened` audit event. Completed packages remain as history; package completion and session deductions are the next scheduling slice.
+
 Prices, payments, expiry, transfers, refunds, and automatic package allocation are not part of this scope.

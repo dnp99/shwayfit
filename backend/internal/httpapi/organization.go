@@ -74,6 +74,28 @@ func registerOrganizationRoutes(mux *http.ServeMux, verifier authn.Verifier, ser
 		}
 		writeJSON(w, http.StatusOK, client)
 	})))
+	mux.Handle("GET /api/v1/organizations/current/clients/{clientID}/packages", requireIdentity(verifier, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		packages, err := service.ListClientPackages(r.Context(), identityFromContext(r.Context()), r.PathValue("clientID"))
+		if err != nil {
+			writeOrganizationError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"packages": packages})
+	})))
+	mux.Handle("POST /api/v1/organizations/current/clients/{clientID}/packages", requireIdentity(verifier, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var request struct {
+			PackageOptionID string `json:"packageOptionId"`
+		}
+		if !decodeJSON(w, r, &request) {
+			return
+		}
+		clientPackage, err := service.AssignClientPackage(r.Context(), identityFromContext(r.Context()), r.PathValue("clientID"), request.PackageOptionID)
+		if err != nil {
+			writeOrganizationError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusCreated, clientPackage)
+	})))
 	registerPackageOptionRoutes(mux, verifier, service)
 }
 
@@ -144,6 +166,10 @@ func writeOrganizationError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusForbidden, "forbidden", "You do not have access to this client")
 	case errors.Is(err, organization.ErrPackageOptionNotFound):
 		writeError(w, http.StatusNotFound, "package_option_not_found", "Package option not found")
+	case errors.Is(err, organization.ErrPackageOptionArchived):
+		writeError(w, http.StatusConflict, "package_option_archived", "This package option is archived")
+	case errors.Is(err, organization.ErrActiveClientPackage):
+		writeError(w, http.StatusConflict, "active_client_package_exists", "This client already has an active package")
 	default:
 		writeError(w, http.StatusInternalServerError, "internal_error", "ShwayFit could not complete this request")
 	}

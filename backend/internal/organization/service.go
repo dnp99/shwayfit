@@ -19,6 +19,8 @@ var (
 	ErrClientNotFound        = errors.New("client not found")
 	ErrClientForbidden       = errors.New("client is not assigned to this trainer")
 	ErrPackageOptionNotFound = errors.New("package option not found")
+	ErrPackageOptionArchived = errors.New("package option is archived")
+	ErrActiveClientPackage   = errors.New("client already has an active package")
 	ErrInvalidInput          = errors.New("invalid input")
 )
 
@@ -73,6 +75,17 @@ type PackageOptionInput struct {
 	IncludedSessions int    `json:"includedSessions"`
 }
 
+// ClientPackage snapshots the sold option. Later option changes can never
+// rewrite its allowance or balance history.
+type ClientPackage struct {
+	ID                string `json:"id"`
+	PackageOptionID   string `json:"packageOptionId"`
+	PackageName       string `json:"packageName"`
+	IncludedSessions  int    `json:"includedSessions"`
+	RemainingSessions int    `json:"remainingSessions"`
+	Status            string `json:"status"`
+}
+
 // Store is deliberately small so domain rules can be tested without Firestore.
 type Store interface {
 	CreateFirstOrganization(context.Context, authn.Identity, string) (Organization, error)
@@ -85,6 +98,8 @@ type Store interface {
 	CreatePackageOption(context.Context, string, PackageOptionInput) (PackageOption, error)
 	ListPackageOptions(context.Context, string) ([]PackageOption, error)
 	ArchivePackageOption(context.Context, string, string) (PackageOption, error)
+	AssignClientPackage(context.Context, string, string, string) (ClientPackage, error)
+	ListClientPackages(context.Context, string, string) ([]ClientPackage, error)
 }
 
 func (s *Service) CreatePackageOption(ctx context.Context, identity authn.Identity, input PackageOptionInput) (PackageOption, error) {
@@ -113,6 +128,39 @@ func (s *Service) ArchivePackageOption(ctx context.Context, identity authn.Ident
 		return PackageOption{}, err
 	}
 	return s.store.ArchivePackageOption(ctx, membership.OrganizationID, optionID)
+}
+
+func (s *Service) AssignClientPackage(ctx context.Context, identity authn.Identity, clientID, optionID string) (ClientPackage, error) {
+	if strings.TrimSpace(optionID) == "" {
+		return ClientPackage{}, ErrInvalidInput
+	}
+	membership, err := s.activeMembership(ctx, identity.UID)
+	if err != nil {
+		return ClientPackage{}, err
+	}
+	client, err := s.store.GetClient(ctx, membership.OrganizationID, clientID)
+	if err != nil {
+		return ClientPackage{}, err
+	}
+	if membership.Role != "owner" && client.AssignedTrainerUID != identity.UID {
+		return ClientPackage{}, ErrClientForbidden
+	}
+	return s.store.AssignClientPackage(ctx, membership.OrganizationID, clientID, strings.TrimSpace(optionID))
+}
+
+func (s *Service) ListClientPackages(ctx context.Context, identity authn.Identity, clientID string) ([]ClientPackage, error) {
+	membership, err := s.activeMembership(ctx, identity.UID)
+	if err != nil {
+		return nil, err
+	}
+	client, err := s.store.GetClient(ctx, membership.OrganizationID, clientID)
+	if err != nil {
+		return nil, err
+	}
+	if membership.Role != "owner" && client.AssignedTrainerUID != identity.UID {
+		return nil, ErrClientForbidden
+	}
+	return s.store.ListClientPackages(ctx, membership.OrganizationID, clientID)
 }
 
 type Service struct{ store Store }
