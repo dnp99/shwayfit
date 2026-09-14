@@ -22,7 +22,7 @@ The five product routes require a signed-in Firebase user. A frontend route guar
 
 ## Current navigation shell
 
-Authenticated pages share a responsive application shell. Desktop uses a persistent sidebar with Today, Clients, and Schedule as daily navigation. Mobile uses the equivalent bottom navigation. Packages and Settings remain direct routes, but are accessed through More so that package-template setup does not compete with the trainer's daily workflow. The header retains the ShwayFit brand and theme control on narrow screens.
+Authenticated pages share a responsive application shell. Desktop uses a persistent sidebar with Today, Clients, Calendar, and Packages; Settings is a secondary item near the trainer identity. Mobile keeps Today, Clients, and Calendar in its bottom navigation and places Packages and Settings under More. The header retains the ShwayFit brand and theme control on narrow screens, while desktop has a compact workspace utility bar.
 
 The shell deliberately uses the existing React Router routes and does not change API calls, authentication, or domain behaviour. Future appointment work can add a dedicated primary action without changing route ownership.
 
