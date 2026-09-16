@@ -20,6 +20,10 @@ const emptyClient: ClientInput = { firstName: '', lastName: '', email: '', phone
 // desktop utility bar is intentionally hidden.
 const workspaceEyebrowClass = 'text-xs font-semibold tracking-[0.175em] text-secondary-foreground lg:hidden'
 
+function clientInitials(client: Pick<Client, 'firstName' | 'lastName'>) {
+  return `${client.firstName.slice(0, 1)}${client.lastName.slice(0, 1)}`.toUpperCase()
+}
+
 export function TrainerWorkspace({ email }: { email: string }) {
   const [organization, setOrganization] = useState<Organization | null>(null)
   const [clients, setClients] = useState<Client[]>([])
@@ -98,9 +102,7 @@ function ClientEditorDialog({ client, error, isOpen, onOpenChange, onSubmit }: {
     <DialogContent className="grid h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-none grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-xl p-0 sm:h-auto sm:max-h-[min(90dvh,52rem)] sm:w-[calc(100%-2rem)] sm:max-w-[52rem] sm:rounded-2xl">
       <DialogHeader className="border-b border-border px-4 py-4 pr-14 sm:px-6 sm:py-5">
         <DialogClose asChild><Button className="-ml-2 min-h-11 w-fit px-2 text-foreground hover:bg-accent active:bg-accent" type="button" variant="ghost"><ChevronLeft className="size-4 text-primary" aria-hidden="true" />Back to clients</Button></DialogClose>
-        <p className="text-xs font-semibold tracking-[0.175em] text-secondary-foreground">CLIENT DETAILS</p>
-        <DialogTitle>{isEditing ? `${client?.firstName} ${client?.lastName}` : 'Add a client'}</DialogTitle>
-        <DialogDescription>{isEditing ? 'Update contact details, scheduling preferences, and session balance.' : 'Add the details you need to begin managing this client.'}</DialogDescription>
+        {client ? <div className="flex items-center gap-3 pt-1"><span className="grid size-11 shrink-0 place-items-center rounded-full bg-secondary text-sm font-semibold text-secondary-foreground" aria-hidden="true">{clientInitials(client)}</span><div className="min-w-0"><p className="text-xs font-semibold tracking-[0.175em] text-secondary-foreground">CLIENT DETAILS</p><div className="mt-1 flex flex-wrap items-center gap-2"><DialogTitle>{client.firstName} {client.lastName}</DialogTitle><span className={client.status === 'active' ? 'rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success' : 'rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground'}>{client.status === 'active' ? 'Active' : 'Archived'}</span></div><DialogDescription className="mt-1 truncate">{client.goals || 'No training goals yet'}</DialogDescription></div></div> : <div className="pt-1"><p className="text-xs font-semibold tracking-[0.175em] text-secondary-foreground">CLIENT DETAILS</p><DialogTitle className="mt-1">Add a client</DialogTitle><DialogDescription className="mt-1">Add the details you need to begin managing this client.</DialogDescription></div>}
       </DialogHeader>
       <div className="min-h-0 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6 sm:py-6">
         <form id="client-editor-form" className="grid gap-6" key={client?.id ?? 'new'} onSubmit={(event) => void onSubmit(event)}>
