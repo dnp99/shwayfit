@@ -5,6 +5,7 @@ import { DesktopSidebar, DesktopUtilityBar, MobileBottomNav, MobileHeader } from
 import { getFirebaseAuth, restoreFirebaseAuthSession } from '../../lib/firebase'
 import { TrainerWorkspace } from '../clients/TrainerWorkspace'
 import { PackageOptions } from '../packages/PackageOptions'
+import { CalendarPage } from '../schedule/CalendarPage'
 
 function FutureArea({ title, description }: { title: string; description: string }) {
   return <section className="mx-auto max-w-3xl rounded-xl border border-border bg-card p-6 text-card-foreground"><p className="text-xs font-semibold tracking-[0.175em] text-secondary-foreground">{title.toUpperCase()}</p><h1 className="mt-2 text-2xl font-semibold tracking-tight">{title}</h1><p className="mt-3 leading-7 text-muted-foreground">{description}</p></section>
@@ -20,7 +21,7 @@ function ApplicationShell({ user }: { user: User }) {
       : area === 'packages'
         ? <PackageOptions />
         : area === 'schedule'
-          ? <FutureArea title="Schedule" description="Appointments will be added once client packages provide the balance and audit foundation." />
+          ? <CalendarPage />
           : <FutureArea title="Settings" description="Trainer and organization preferences will follow the core workflow." />
 
   return <main className="min-h-screen bg-background text-foreground lg:flex"><DesktopSidebar email={user.email ?? ''} /><div className="min-w-0 flex-1"><DesktopUtilityBar /><MobileHeader /><div className="mx-auto w-full max-w-7xl px-4 py-6 pb-24 sm:px-6 sm:py-8 lg:px-10 lg:py-10 lg:pb-10">{content}</div></div><MobileBottomNav /></main>
