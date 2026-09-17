@@ -55,8 +55,7 @@ export function SignIn() {
       const auth = getFirebaseAuth()
       await configureFirebaseAuthPersistence(isTrustedDevice)
       try {
-        const credential = await signInWithPopup(auth, new GoogleAuthProvider())
-        await completeSignIn(credential.user)
+        await signInWithPopup(auth, new GoogleAuthProvider())
       } catch (caught) {
         if (typeof caught === 'object' && caught !== null && 'code' in caught && caught.code === 'auth/popup-blocked') {
           await signInWithRedirect(auth, new GoogleAuthProvider())

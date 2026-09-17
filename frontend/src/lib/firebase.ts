@@ -11,6 +11,7 @@ const firebaseConfig = {
 const trustedDeviceKey = 'shwayfit.auth.trusted-device'
 const sessionExpiryKey = 'shwayfit.auth.expires-at'
 export const maxSessionAgeMs = 24 * 60 * 60 * 1000
+let sessionRestore: Promise<void> | undefined
 
 function getFirebaseApp(): FirebaseApp {
   if (getApps().length > 0) return getApp()
@@ -70,12 +71,19 @@ export async function endFirebaseAuthSession() {
 // Default to browser-session persistence. A trusted-device choice restores a
 // browser-local Firebase session, but the separate 24-hour expiry still applies.
 export async function restoreFirebaseAuthSession() {
-  const trusted = isTrustedDevice()
-  await setPersistence(getFirebaseAuth(), trusted ? browserLocalPersistence : browserSessionPersistence)
-  const remaining = remainingSessionMs()
-  if (remaining !== null && remaining <= 0) {
-    await endFirebaseAuthSession()
-    return
-  }
-  if (getFirebaseAuth().currentUser && remaining === null) beginFirebaseAuthSession()
+  if (sessionRestore) return sessionRestore
+  sessionRestore = (async () => {
+    const trusted = isTrustedDevice()
+    await setPersistence(getFirebaseAuth(), trusted ? browserLocalPersistence : browserSessionPersistence)
+    const remaining = remainingSessionMs()
+    if (remaining !== null && remaining <= 0) {
+      await endFirebaseAuthSession()
+      return
+    }
+    if (getFirebaseAuth().currentUser && remaining === null) beginFirebaseAuthSession()
+  })().catch((error: unknown) => {
+    sessionRestore = undefined
+    throw error
+  })
+  return sessionRestore
 }
