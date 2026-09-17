@@ -3,11 +3,11 @@ import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { api } from '../../lib/api'
-import { Button } from '../../components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog'
-import { Input } from '../../components/ui/input'
-import { Label } from '../../components/ui/label'
-import { Textarea } from '../../components/ui/textarea'
+import { Button } from '../ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog'
+import { Input } from '../ui/input'
+import { Label } from '../ui/label'
+import { Textarea } from '../ui/textarea'
 import { cn } from '../../lib/utils'
 
 type CalendarView = 'today' | 'week' | 'month'
@@ -125,7 +125,7 @@ function CompleteAppointmentDialog({ appointment, client, onCompleted, onOpenCha
   return <Dialog onOpenChange={onOpenChange} open={open}><DialogContent><DialogHeader><p className="text-xs font-semibold tracking-[0.175em] text-secondary-foreground">SESSION COMPLETION</p><DialogTitle>{appointment?.status === 'completed' ? 'Session completed' : 'Complete session?'}</DialogTitle><DialogDescription>{client ? `${client.firstName} ${client.lastName}` : 'Client'} · {appointment ? timeFormatter.format(new Date(appointment.startAt)) : ''}</DialogDescription></DialogHeader>{appointment?.status === 'completed' ? <p className="rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-sm text-foreground">This session is already complete. Its package debit has been recorded.</p> : <><p className="text-sm leading-6 text-muted-foreground">Completing this session uses one remaining package session. This action cannot be undone from the calendar.</p>{error && <p className="text-sm text-destructive" role="alert">{error}</p>}<DialogFooter><Button disabled={isSaving} onClick={() => onOpenChange(false)} type="button" variant="outline">Cancel</Button><Button disabled={isSaving} onClick={() => void complete()} type="button"><CalendarCheck aria-hidden="true" className="size-4" />{isSaving ? 'Completing…' : 'Complete session'}</Button></DialogFooter></>}</DialogContent></Dialog>
 }
 
-export function CalendarPage() {
+export function Calendar() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [view, setView] = useState<CalendarView>('week')
