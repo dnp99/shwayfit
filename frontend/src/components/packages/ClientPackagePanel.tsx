@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { PackageCheck, PackagePlus } from 'lucide-react'
-import { Button } from '../../components/ui/button'
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog'
-import { Label } from '../../components/ui/label'
+import { Button } from '../ui/button'
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog'
+import { Label } from '../ui/label'
 import { api } from '../../lib/api'
 
 type PackageOption = { id: string; name: string; includedSessions: number; status: 'active' | 'archived' }
 type ClientPackage = { id: string; packageOptionId: string; packageName: string; includedSessions: number; remainingSessions: number; status: 'active' | 'completed' }
 
-export function ClientPackagePanel({ clientID, clientName }: { clientID: string; clientName: string }) {
+export function ClientPackagePanel({ clientID, clientName, embedded = false }: { clientID: string; clientName: string; embedded?: boolean }) {
   const [options, setOptions] = useState<PackageOption[]>([])
   const [packages, setPackages] = useState<ClientPackage[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -46,8 +46,8 @@ export function ClientPackagePanel({ clientID, clientName }: { clientID: string;
   const activePackage = packages.find((item) => item.status === 'active')
   const activeOptions = options.filter((option) => option.status === 'active')
 
-  return <section className="rounded-xl border border-border bg-card p-5 sm:p-6" aria-labelledby="client-package-heading">
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-xs font-semibold tracking-[0.175em] text-secondary-foreground">CLIENT PACKAGE</p><h2 id="client-package-heading" className="mt-1 text-xl font-semibold tracking-tight">Current package</h2><p className="mt-1 text-sm text-muted-foreground">Review this client’s current session allowance.</p></div>{!activePackage && activeOptions.length > 0 && <AssignPackageDialog clientName={clientName} isOpen={isOpen} onOpenChange={setIsOpen} isSaving={isSaving} options={activeOptions} onSubmit={assignPackage} />}</div>
+  const content = <>
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-xs font-semibold tracking-[0.175em] text-secondary-foreground">CLIENT PACKAGE</p><h2 id="client-package-heading" className="mt-1 text-lg font-semibold">Current package</h2><p className="mt-1 text-sm text-muted-foreground">Review this client’s current session allowance.</p></div>{!activePackage && activeOptions.length > 0 && <AssignPackageDialog clientName={clientName} isOpen={isOpen} onOpenChange={setIsOpen} isSaving={isSaving} options={activeOptions} onSubmit={assignPackage} />}</div>
     <div className="mt-4">
       {error && <p className="mb-3 text-sm text-destructive" role="alert">{error}</p>}
       {isLoading ? <p className="text-sm text-muted-foreground">Loading package balance…</p>
@@ -56,7 +56,9 @@ export function ClientPackagePanel({ clientID, clientName }: { clientID: string;
             : <p className="text-sm leading-6 text-muted-foreground">No active package. Assign one option to open {clientName}’s starting balance.</p>}
       {packages.some((item) => item.status !== 'active') && <p className="mt-3 text-xs text-muted-foreground">{packages.filter((item) => item.status !== 'active').length} historical package{packages.filter((item) => item.status !== 'active').length === 1 ? '' : 's'} retained.</p>}
     </div>
-  </section>
+  </>
+
+  return embedded ? <div aria-labelledby="client-package-heading">{content}</div> : <section className="rounded-xl border border-border bg-card p-5 sm:p-6" aria-labelledby="client-package-heading">{content}</section>
 }
 
 function AssignPackageDialog({ clientName, isOpen, onOpenChange, isSaving, options, onSubmit }: { clientName: string; isOpen: boolean; onOpenChange: (open: boolean) => void; isSaving: boolean; options: PackageOption[]; onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void> }) {

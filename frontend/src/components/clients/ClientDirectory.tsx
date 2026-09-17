@@ -1,7 +1,7 @@
 import { ChevronRight, Clock3, Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { Button } from '../../components/ui/button'
-import { Card, CardContent } from '../../components/ui/card'
+import { Button } from '../ui/button'
+import { Card, CardContent } from '../ui/card'
 import { Input } from '../../components/ui/input'
 import { cn } from '../../lib/utils'
 

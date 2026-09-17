@@ -83,7 +83,7 @@ Outputs are independent: `frontend/dist/` and `backend/bin/shwayfit-api`. See [C
 
 ## Project map
 
-- `frontend/`: phone-first React application.
+- `frontend/`: phone-first React application. Its authenticated feature screens live in `frontend/src/components/dashboard/`, `calendar/`, `clients/`, and `packages/`; `frontend/src/features/app/` owns authentication and application composition.
 - `backend/cmd/api/`: process configuration and graceful shutdown.
 - `backend/internal/httpapi/`: HTTP routes and boundary tests.
 - `docs/`: API contract and operational documentation.
