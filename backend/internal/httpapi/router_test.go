@@ -12,13 +12,16 @@ import (
 )
 
 type testVerifier struct {
-	identity authn.Identity
-	err      error
+	identity  authn.Identity
+	err       error
+	revokeErr error
 }
 
 func (v testVerifier) VerifyIDToken(_ context.Context, _ string) (authn.Identity, error) {
 	return v.identity, v.err
 }
+
+func (v testVerifier) RevokeRefreshTokens(_ context.Context, _ string) error { return v.revokeErr }
 
 func TestHealth(t *testing.T) {
 	response := httptest.NewRecorder()
@@ -113,4 +116,49 @@ func TestCurrentIdentityRejectsUnauthenticatedRequests(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRevokeSession(t *testing.T) {
+	handler := NewHandler(Config{TokenVerifier: testVerifier{identity: authn.Identity{UID: "trainer-123"}}})
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/session/revoke", nil)
+	request.Header.Set("Authorization", "Bearer signed-token")
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("status = %d", response.Code)
+	}
+	if response.Header().Get("Cache-Control") != "no-store" {
+		t.Fatal("session revocation must not be cached")
+	}
+}
+
+func TestRevokeSessionReportsUnavailableRevoker(t *testing.T) {
+	handler := NewHandler(Config{TokenVerifier: verifierWithoutRevocation{identity: authn.Identity{UID: "trainer-123"}}})
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/session/revoke", nil)
+	request.Header.Set("Authorization", "Bearer signed-token")
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusServiceUnavailable {
+		t.Fatalf("status = %d", response.Code)
+	}
+}
+
+func TestRevokeSessionReportsFirebaseFailure(t *testing.T) {
+	handler := NewHandler(Config{TokenVerifier: testVerifier{
+		identity:  authn.Identity{UID: "trainer-123"},
+		revokeErr: errors.New("firebase unavailable"),
+	}})
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/session/revoke", nil)
+	request.Header.Set("Authorization", "Bearer signed-token")
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusServiceUnavailable {
+		t.Fatalf("status = %d", response.Code)
+	}
+}
+
+type verifierWithoutRevocation struct{ identity authn.Identity }
+
+func (v verifierWithoutRevocation) VerifyIDToken(_ context.Context, _ string) (authn.Identity, error) {
+	return v.identity, nil
 }

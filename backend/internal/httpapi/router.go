@@ -40,6 +40,19 @@ func NewHandler(config ...Config) http.Handler {
 			EmailVerified bool   `json:"emailVerified"`
 		}{UID: identity.UID, Email: identity.Email, EmailVerified: identity.EmailVerified})
 	})))
+	mux.Handle("POST /api/v1/session/revoke", requireIdentity(dependencies.TokenVerifier, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		revoker, ok := dependencies.TokenVerifier.(authn.RefreshTokenRevoker)
+		if !ok {
+			writeError(w, http.StatusServiceUnavailable, "authentication_unavailable", "Session revocation is unavailable")
+			return
+		}
+		if err := revoker.RevokeRefreshTokens(r.Context(), identityFromContext(r.Context()).UID); err != nil {
+			writeError(w, http.StatusServiceUnavailable, "authentication_unavailable", "Session revocation is unavailable")
+			return
+		}
+		w.Header().Set("Cache-Control", "no-store")
+		w.WriteHeader(http.StatusNoContent)
+	})))
 	if dependencies.OrganizationService != nil {
 		registerOrganizationRoutes(mux, dependencies.TokenVerifier, dependencies.OrganizationService)
 	}

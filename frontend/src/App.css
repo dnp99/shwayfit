@@ -47,6 +47,8 @@ footer p { color: var(--muted-foreground); font-size: 11px; margin: 0; }
 .sign-in-card p { color: var(--muted-foreground); line-height: 1.6; }
 .sign-in-card .button { cursor: pointer; font: inherit; margin-top: 1rem; }
 .sign-in-card .button:disabled { cursor: wait; opacity: .7; }
+.sign-in-trusted-device { align-items: flex-start; color: var(--muted-foreground); cursor: pointer; display: flex; font-size: .875rem; gap: .625rem; line-height: 1.4; margin-top: 1.25rem; }
+.sign-in-trusted-device input { accent-color: var(--primary); height: 1rem; margin: .125rem 0 0; width: 1rem; }
 .sign-in-error { color: var(--destructive) !important; }
 .legal-page { background: var(--background); color: var(--foreground); min-height: 100vh; padding: 2rem clamp(1.25rem, 6vw, 7rem) 5rem; }
 .legal-header { border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; }

@@ -24,6 +24,12 @@ type Verifier interface {
 	VerifyIDToken(ctx context.Context, rawToken string) (Identity, error)
 }
 
+// RefreshTokenRevoker is implemented by verifiers that can end a user's
+// Firebase sessions across devices.
+type RefreshTokenRevoker interface {
+	RevokeRefreshTokens(ctx context.Context, uid string) error
+}
+
 // FirebaseVerifier checks signed Firebase ID tokens using the Admin SDK.
 type FirebaseVerifier struct {
 	client *auth.Client
@@ -48,11 +54,18 @@ func NewFirebaseVerifier(ctx context.Context, projectID string) (*FirebaseVerifi
 }
 
 func (v *FirebaseVerifier) VerifyIDToken(ctx context.Context, rawToken string) (Identity, error) {
-	token, err := v.client.VerifyIDToken(ctx, rawToken)
+	token, err := v.client.VerifyIDTokenAndCheckRevoked(ctx, rawToken)
 	if err != nil {
 		return Identity{}, err
 	}
 	email, _ := token.Claims["email"].(string)
 	emailVerified, _ := token.Claims["email_verified"].(bool)
 	return Identity{UID: token.UID, Email: email, EmailVerified: emailVerified}, nil
+}
+
+// RevokeRefreshTokens prevents Firebase refresh tokens issued before this call
+// from minting new ID tokens. Existing ID tokens are rejected by the revoked
+// token check above on protected API requests.
+func (v *FirebaseVerifier) RevokeRefreshTokens(ctx context.Context, uid string) error {
+	return v.client.RevokeRefreshTokens(ctx, uid)
 }

@@ -22,9 +22,15 @@ Browser clients cannot read or write Firestore. `firestore.rules` denies every d
 
 Cloud Run uses Application Default Credentials from its runtime service account. No service-account JSON key belongs in this repository or the frontend.
 
+## Session lifetime and sign-out
+
+Each trainer session has an absolute 24-hour lifetime from sign-in. It is not extended by activity. By default, ShwayFit uses browser-session persistence, so closing the browser ends the session earlier. A trainer may select **Stay signed in on this personal device** at sign-in to persist the Firebase session across browser restarts; that choice does not extend the 24-hour deadline.
+
+The application provides **Sign out** in navigation and Settings. Settings also offers **Sign out all devices**, which revokes the trainer's Firebase refresh tokens and ends the current browser session. The API verifies each protected Firebase ID token with revocation checking, so tokens issued before a completed revocation are rejected. Firebase ID tokens are short-lived; a browser cannot obtain a replacement token after its refresh token has been revoked.
+
 ## Google sign-in
 
-Firebase Authentication uses browser-local persistence. On a refresh, the application waits for Firebase to restore a remembered Google session before deciding whether the trainer must sign in again. The React route guard improves navigation only; it does not replace server-side Firebase token, organization membership, role, or client-assignment checks.
+On a refresh, the application waits for Firebase to restore the selected Firebase session persistence before deciding whether the trainer must sign in again. The React route guard improves navigation only; it does not replace server-side Firebase token, organization membership, role, or client-assignment checks.
 
 The POC uses Google sign-in only. Email/password, phone authentication, and client sign-in are not enabled. Firebase Authentication authorizes `localhost`, `shwayfit.app`, and `shwayfit-f7f0b.web.app` for this flow.
 

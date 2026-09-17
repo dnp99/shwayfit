@@ -1,4 +1,4 @@
-import { CalendarDays, Dumbbell, LayoutDashboard, Package, Plus, Settings, Sparkles, Users } from 'lucide-react'
+import { CalendarDays, Dumbbell, LayoutDashboard, LogOut, Package, Plus, Settings, Sparkles, Users } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router'
 import { ThemeToggle } from '../../components/ThemeToggle'
 import { Button } from '../../components/ui/button'
@@ -34,7 +34,7 @@ function navigationClass(isActive: boolean) {
   )
 }
 
-export function DesktopSidebar({ email }: { email: string }) {
+export function DesktopSidebar({ email, onSignOut }: { email: string; onSignOut: () => void }) {
   return <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar p-4 lg:flex" aria-label="Product navigation">
     <ProductBrand />
     <nav className="mt-12 grid gap-1" aria-label="Primary product navigation">
@@ -44,6 +44,7 @@ export function DesktopSidebar({ email }: { email: string }) {
     </nav>
     <div className="mt-auto grid gap-2 border-t border-sidebar-border pt-4">
       <NavLink className={({ isActive }) => navigationClass(isActive)} to="/settings"><Settings className="size-5" aria-hidden="true" />Settings</NavLink>
+      <Button className="min-h-11 justify-start text-muted-foreground hover:text-sidebar-foreground" onClick={onSignOut} type="button" variant="ghost"><LogOut className="size-5" aria-hidden="true" />Sign out</Button>
       <div className="flex min-h-14 items-center gap-3 rounded-xl border border-sidebar-border px-3">
         <span className="grid size-8 shrink-0 place-items-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground" aria-hidden="true">{email.slice(0, 1).toUpperCase() || 'T'}</span>
         <p className="min-w-0 truncate text-xs text-muted-foreground" title={email}>{email || 'Trainer'}</p>
@@ -60,10 +61,10 @@ export function DesktopUtilityBar() {
   </header>
 }
 
-export function MobileHeader() {
+export function MobileHeader({ onSignOut }: { onSignOut: () => void }) {
   return <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur lg:hidden">
     <ProductBrand />
-    <ThemeToggle />
+    <div className="flex items-center gap-1"><ThemeToggle /><Button aria-label="Sign out" onClick={onSignOut} size="icon" type="button" variant="ghost"><LogOut className="size-5" aria-hidden="true" /></Button></div>
   </header>
 }
 

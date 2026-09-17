@@ -151,6 +151,32 @@ func TestClientInputValidatesOptionalContactDetails(t *testing.T) {
 	}
 }
 
+func TestClientInputValidatesStartingMeasurements(t *testing.T) {
+	valid := ClientInput{FirstName: "Avery", LastName: "Sample", Status: "active"}
+	weight := 72.5
+	height := 172.0
+	for _, test := range []struct {
+		name  string
+		input ClientInput
+		want  error
+	}{
+		{name: "omitted", input: valid, want: nil},
+		{name: "height only", input: ClientInput{FirstName: valid.FirstName, LastName: valid.LastName, Status: valid.Status, HeightCM: &height}, want: nil},
+		{name: "dated starting weight", input: ClientInput{FirstName: valid.FirstName, LastName: valid.LastName, Status: valid.Status, StartingWeightKG: &weight, StartingMeasurementDate: "2026-09-17", StartingMeasurementNotes: "Baseline"}, want: nil},
+		{name: "weight needs date", input: ClientInput{FirstName: valid.FirstName, LastName: valid.LastName, Status: valid.Status, StartingWeightKG: &weight}, want: ErrInvalidInput},
+		{name: "date without weight", input: ClientInput{FirstName: valid.FirstName, LastName: valid.LastName, Status: valid.Status, StartingMeasurementDate: "2026-09-17"}, want: ErrInvalidInput},
+		{name: "height out of range", input: ClientInput{FirstName: valid.FirstName, LastName: valid.LastName, Status: valid.Status, HeightCM: float64Pointer(301)}, want: ErrInvalidInput},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if err := validateClientInput(test.input); err != test.want {
+				t.Fatalf("validateClientInput() = %v, want %v", err, test.want)
+			}
+		})
+	}
+}
+
+func float64Pointer(value float64) *float64 { return &value }
+
 func TestPackageOptionAllowsActiveTrainerMembership(t *testing.T) {
 	service := NewService(&fakeStore{membership: Membership{OrganizationID: "organization-a", Role: "trainer", Active: true}})
 	option, err := service.CreatePackageOption(context.Background(), authn.Identity{UID: "trainer-a"}, PackageOptionInput{Name: "Five sessions", IncludedSessions: 5})

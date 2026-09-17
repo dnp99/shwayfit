@@ -1,18 +1,17 @@
 import { onAuthStateChanged, type User } from 'firebase/auth'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Navigate, useLocation } from 'react-router'
 import { DesktopSidebar, DesktopUtilityBar, MobileBottomNav, MobileHeader } from './AppNavigation'
-import { getFirebaseAuth, restoreFirebaseAuthSession } from '../../lib/firebase'
+import { api } from '../../lib/api'
+import { beginFirebaseAuthSession, endFirebaseAuthSession, getFirebaseAuth, restoreFirebaseAuthSession } from '../../lib/firebase'
 import { Dashboard } from '../../components/dashboard/Dashboard'
 import { Calendar } from '../../components/calendar/Calendar'
 import { Clients } from '../../components/clients/Clients'
 import { Packages } from '../../components/packages/Packages'
+import { SessionExpiryGuard } from '../../components/auth/SessionExpiryGuard'
+import { Settings } from '../../components/settings/Settings'
 
-function FutureArea({ title, description }: { title: string; description: string }) {
-  return <section className="mx-auto max-w-3xl rounded-xl border border-border bg-card p-6 text-card-foreground"><p className="text-xs font-semibold tracking-[0.175em] text-secondary-foreground">{title.toUpperCase()}</p><h1 className="mt-2 text-2xl font-semibold tracking-tight">{title}</h1><p className="mt-3 leading-7 text-muted-foreground">{description}</p></section>
-}
-
-function ApplicationShell({ user }: { user: User }) {
+function ApplicationShell({ user, onSignOut, onSignOutEverywhere }: { user: User; onSignOut: () => Promise<void>; onSignOutEverywhere: () => Promise<void> }) {
   const { pathname, search } = useLocation()
   const area = pathname.split('/')[1]
   const content = area === 'clients'
@@ -23,19 +22,26 @@ function ApplicationShell({ user }: { user: User }) {
         ? <Packages />
         : area === 'schedule'
           ? <Calendar />
-          : <FutureArea title="Settings" description="Trainer and organization preferences will follow the core workflow." />
+          : <Settings onSignOut={onSignOut} onSignOutEverywhere={onSignOutEverywhere} />
 
-  return <main className="min-h-screen bg-background text-foreground lg:flex"><DesktopSidebar email={user.email ?? ''} /><div className="min-w-0 flex-1"><DesktopUtilityBar /><MobileHeader /><div className="mx-auto w-full max-w-7xl px-4 py-6 pb-24 sm:px-6 sm:py-8 lg:px-10 lg:py-10 lg:pb-10">{content}</div></div><MobileBottomNav /></main>
+  return <main className="min-h-screen bg-background text-foreground lg:flex"><DesktopSidebar email={user.email ?? ''} onSignOut={onSignOut} /><div className="min-w-0 flex-1"><DesktopUtilityBar /><MobileHeader onSignOut={onSignOut} /><div className="mx-auto w-full max-w-7xl px-4 py-6 pb-24 sm:px-6 sm:py-8 lg:px-10 lg:py-10 lg:pb-10">{content}</div></div><MobileBottomNav /></main>
 }
 
 export function AuthenticatedApp() {
   const [user, setUser] = useState<User | null | undefined>(undefined)
+  const signOut = useCallback(async () => {
+    await endFirebaseAuthSession()
+  }, [])
+  const signOutEverywhere = useCallback(async () => {
+    await api('/api/v1/session/revoke', { method: 'POST' })
+    await endFirebaseAuthSession()
+  }, [])
   useEffect(() => {
     let unsubscribe = () => {}
-    void restoreFirebaseAuthSession().catch(() => undefined).then(() => { unsubscribe = onAuthStateChanged(getFirebaseAuth(), setUser) })
+    void restoreFirebaseAuthSession().catch(() => undefined).then(() => { unsubscribe = onAuthStateChanged(getFirebaseAuth(), (currentUser) => { if (currentUser) beginFirebaseAuthSession(); setUser(currentUser) }) })
     return () => unsubscribe()
   }, [])
   if (user === undefined) return <main className="grid min-h-screen place-items-center bg-background text-muted-foreground">Checking your sign-in…</main>
   if (!user) return <Navigate to="/sign-in" replace />
-  return <ApplicationShell user={user} />
+  return <><SessionExpiryGuard onExpired={signOut} /><ApplicationShell onSignOut={signOut} onSignOutEverywhere={signOutEverywhere} user={user} /></>
 }

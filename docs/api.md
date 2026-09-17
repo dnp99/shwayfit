@@ -24,6 +24,10 @@ Shared endpoint contracts will live in [`../shared/contracts/`](../shared/contra
 
 Requires `Authorization: Bearer <Firebase ID token>`. The API verifies the token and returns the authenticated Firebase identity. It does not itself authorize organization data; the organization and client endpoints below enforce membership, role, and client assignment.
 
+## `POST /api/v1/session/revoke`
+
+Requires `Authorization: Bearer <Firebase ID token>`. Revokes the current trainer's Firebase refresh tokens and returns `204 No Content`. The browser then signs itself out locally. Every protected API request verifies Firebase token revocation, so an ID token issued before revocation is rejected once Firebase reports it revoked. The endpoint returns `503 authentication_unavailable` if Firebase cannot perform the revocation.
+
 ## Organization and client records
 
 The POC has a one-time, authenticated organization bootstrap: `POST /api/v1/organizations` accepts a 2–80-character business name and creates the caller's organization plus an active `owner` membership. A caller with a membership receives `409 organization_already_exists` rather than being able to create another organization.
@@ -35,7 +39,9 @@ The POC has a one-time, authenticated organization bootstrap: `POST /api/v1/orga
 - `GET /api/v1/organizations/current/clients/{clientID}`
 - `PATCH /api/v1/organizations/current/clients/{clientID}`
 
-The API bounds JSON requests to 64 KiB, rejects unknown fields, and returns the common JSON error shape. First and last name are required. Email, phone, goals, private notes, and a preferred local time window are optional; client status is `active` or `archived`. When supplied, email must be a valid mailbox address. A phone number must use normal phone formatting characters and contain 7–15 digits. When present, the time window has a `preferredStartTime` and `preferredEndTime` in zero-padded 24-hour `HH:MM` format, and the end must follow the start. It records a scheduling preference only; it does not book an appointment. Delete is intentionally not available.
+The API bounds JSON requests to 64 KiB, rejects unknown fields, and returns the common JSON error shape. First and last name are required. Email, phone, goals, private notes, and a preferred local time window are optional; client status is `active` or `archived`. When supplied, email must be a valid mailbox address. A phone number must use normal phone formatting characters and contain 7–15 digits. When present, the time window has a `preferredStartTime` and `preferredEndTime` in zero-padded 24-hour `HH:MM` format, and the end must follow the start. It records a scheduling preference only; it does not book an appointment.
+
+Optional baseline measurements include `heightCm` (50–300 cm) and a dated `startingWeightKg` (20–500 kg). A starting weight requires an ISO `startingMeasurementDate` and may include 500 characters of context. Height is stored with the client profile. A starting weight is also written to the client’s `measurements/starting` record so a later measurement-history feature has a dated first entry. Delete is intentionally not available.
 
 The verified Firebase identity is mapped to `trainerMemberships/{uid}`. Client data is stored at `organizations/{organizationId}/clients/{clientId}` and includes an assigned trainer UID. Each route checks active membership and role; non-owner trainers are limited to records assigned to their UID. Browser Firestore access remains denied, including to memberships and client contact details.
 
