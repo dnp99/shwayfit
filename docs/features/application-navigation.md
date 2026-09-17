@@ -1,0 +1,3 @@
+# Application navigation
+
+Desktop navigation presents Dashboard, Calendar, Clients, and Packages in the sidebar, with Settings and the signed-in trainer account at the bottom. The Dashboard label uses the existing `/home` route. Its utility bar identifies the trainer workspace and opens the booking dialog at `/schedule?book=1`. Phone navigation uses the task-oriented order: Today, Calendar, Add, Clients, and Packages. The centered Add control opens the full client-create screen at `/clients/new`. Selecting a client opens its full detail/edit screen at `/clients/:clientId`; all API authorization remains server-side.

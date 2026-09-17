@@ -1,25 +1,26 @@
-import { CalendarDays, ChevronRight, CircleEllipsis, Home, Package, Settings, Users } from 'lucide-react'
-import { NavLink, useLocation } from 'react-router'
+import { CalendarDays, Dumbbell, LayoutDashboard, Package, Plus, Settings, Sparkles, Users } from 'lucide-react'
+import { NavLink, useNavigate } from 'react-router'
 import { ThemeToggle } from '../../components/ThemeToggle'
 import { Button } from '../../components/ui/button'
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog'
 import { cn } from '../../lib/utils'
 
 const desktopItems = [
-  { to: '/home', label: 'Today', icon: Home },
-  { to: '/clients', label: 'Clients', icon: Users },
+  { to: '/home', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/schedule', label: 'Calendar', icon: CalendarDays },
+  { to: '/clients', label: 'Clients', icon: Users },
   { to: '/packages', label: 'Packages', icon: Package },
 ] as const
 
-const moreItems = [
-  { to: '/packages', label: 'Packages', description: 'Reusable session package options', icon: Package },
-  { to: '/settings', label: 'Settings', description: 'Trainer and organization preferences', icon: Settings },
+const mobileItems = [
+  { to: '/home', label: 'Today', icon: LayoutDashboard },
+  { to: '/schedule', label: 'Calendar', icon: CalendarDays },
+  { to: '/clients', label: 'Clients', icon: Users },
+  { to: '/packages', label: 'Packages', icon: Package },
 ] as const
 
 function ProductBrand() {
   return <NavLink className="inline-flex items-center gap-2.5 font-semibold tracking-tight text-sidebar-foreground" to="/home" aria-label="ShwayFit Today">
-    <span className="grid size-9 place-items-center rounded-xl bg-sidebar-primary text-xl font-semibold text-brand-lime" aria-hidden="true">s</span>
+    <span className="relative grid size-10 place-items-center rounded-xl bg-sidebar-primary text-brand-lime" aria-hidden="true"><Dumbbell className="size-5" /><span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-brand-lime ring-2 ring-sidebar" /></span>
     <span className="text-lg">ShwayFit</span>
   </NavLink>
 }
@@ -33,47 +34,17 @@ function navigationClass(isActive: boolean) {
   )
 }
 
-function MoreNavigation({ compact = false }: { compact?: boolean }) {
-  const { pathname } = useLocation()
-  const isActive = moreItems.some((item) => pathname.startsWith(item.to))
-
-  return <Dialog>
-    <DialogTrigger asChild>
-      <Button className={cn(compact ? 'h-auto min-h-11 w-full flex-col gap-0.5 px-2 text-[0.6875rem]' : 'w-full justify-start gap-3 px-3 font-medium', isActive && 'bg-sidebar-accent text-sidebar-accent-foreground')} variant="ghost">
-        <CircleEllipsis className="size-5" aria-hidden="true" />
-        <span>More</span>
-      </Button>
-    </DialogTrigger>
-    <DialogContent>
-      <DialogHeader>
-        <p className="text-xs font-semibold tracking-[0.175em] text-secondary-foreground">SHWAYFIT</p>
-        <DialogTitle>More</DialogTitle>
-        <DialogDescription>Manage the parts of your business that do not need to be in your daily navigation.</DialogDescription>
-      </DialogHeader>
-      <nav className="grid gap-2" aria-label="More product navigation">
-        {moreItems.map(({ to, label, description, icon: Icon }) => <DialogClose asChild key={to}>
-          <NavLink className="flex min-h-14 items-center gap-3 rounded-lg border border-border px-3 text-card-foreground transition-colors hover:bg-accent focus-visible:outline-3 focus-visible:outline-ring" to={to}>
-            <span className="grid size-10 place-items-center rounded-lg bg-secondary text-secondary-foreground"><Icon className="size-5" aria-hidden="true" /></span>
-            <span className="min-w-0 flex-1"><span className="block text-sm font-medium">{label}</span><span className="mt-0.5 block text-xs text-muted-foreground">{description}</span></span>
-            <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
-          </NavLink>
-        </DialogClose>)}
-      </nav>
-    </DialogContent>
-  </Dialog>
-}
-
 export function DesktopSidebar({ email }: { email: string }) {
   return <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar p-4 lg:flex" aria-label="Product navigation">
     <ProductBrand />
-    <nav className="mt-10 grid gap-1" aria-label="Primary product navigation">
+    <nav className="mt-12 grid gap-1" aria-label="Primary product navigation">
       {desktopItems.map(({ to, label, icon: Icon }) => <NavLink className={({ isActive }) => navigationClass(isActive)} key={to} to={to}>
         <Icon className="size-5" aria-hidden="true" />{label}
       </NavLink>)}
     </nav>
     <div className="mt-auto grid gap-2 border-t border-sidebar-border pt-4">
       <NavLink className={({ isActive }) => navigationClass(isActive)} to="/settings"><Settings className="size-5" aria-hidden="true" />Settings</NavLink>
-      <div className="flex min-h-11 items-center gap-3 px-2">
+      <div className="flex min-h-14 items-center gap-3 rounded-xl border border-sidebar-border px-3">
         <span className="grid size-8 shrink-0 place-items-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground" aria-hidden="true">{email.slice(0, 1).toUpperCase() || 'T'}</span>
         <p className="min-w-0 truncate text-xs text-muted-foreground" title={email}>{email || 'Trainer'}</p>
       </div>
@@ -82,9 +53,10 @@ export function DesktopSidebar({ email }: { email: string }) {
 }
 
 export function DesktopUtilityBar() {
+  const navigate = useNavigate()
   return <header className="hidden min-h-20 items-center justify-between border-b border-border px-10 lg:flex">
-    <p className="text-xs font-semibold tracking-[0.175em] text-secondary-foreground">TRAINER WORKSPACE</p>
-    <div className="flex items-center gap-3"><span className="text-sm text-muted-foreground">Appearance</span><ThemeToggle /></div>
+    <p className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground"><Sparkles className="size-5 text-primary" aria-hidden="true" />Trainer workspace</p>
+    <div className="flex items-center gap-3"><ThemeToggle /><Button onClick={() => navigate('/schedule?book=1')} type="button"><Plus className="size-4" aria-hidden="true" />Book appointment</Button></div>
   </header>
 }
 
@@ -96,10 +68,13 @@ export function MobileHeader() {
 }
 
 export function MobileBottomNav() {
-  return <nav className="fixed inset-x-0 bottom-0 z-30 grid min-h-16 grid-cols-4 border-t border-border bg-card/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur lg:hidden" aria-label="Primary product navigation">
-    {desktopItems.slice(0, 3).map(({ to, label, icon: Icon }) => <NavLink className={({ isActive }) => cn('flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-lg px-2 text-[0.6875rem] font-medium transition-colors focus-visible:outline-3 focus-visible:outline-ring focus-visible:outline-offset-[-3px]', isActive ? 'text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground')} key={to} to={to}>
+  return <nav className="fixed inset-x-0 bottom-0 z-30 grid min-h-16 grid-cols-5 border-t border-border bg-card/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur lg:hidden" aria-label="Primary product navigation">
+    {mobileItems.slice(0, 2).map(({ to, label, icon: Icon }) => <NavLink className={({ isActive }) => cn('flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-lg px-2 text-[0.6875rem] font-medium transition-colors focus-visible:outline-3 focus-visible:outline-ring focus-visible:outline-offset-[-3px]', isActive ? 'text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground')} key={to} to={to}>
       <Icon className="size-5" aria-hidden="true" />{label}
     </NavLink>)}
-    <MoreNavigation compact />
+    <NavLink className="flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-lg px-2 text-[0.6875rem] font-medium text-foreground transition-colors focus-visible:outline-3 focus-visible:outline-ring focus-visible:outline-offset-[-3px]" to="/clients/new"><span className="-mt-7 grid size-12 place-items-center rounded-full border border-border bg-primary text-primary-foreground shadow-sm"><Plus className="size-5" aria-hidden="true" /></span><span className="-mt-0.5">Add</span></NavLink>
+    {mobileItems.slice(2).map(({ to, label, icon: Icon }) => <NavLink className={({ isActive }) => cn('flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-lg px-2 text-[0.6875rem] font-medium transition-colors focus-visible:outline-3 focus-visible:outline-ring focus-visible:outline-offset-[-3px]', isActive ? 'text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground')} key={to} to={to}>
+      <Icon className="size-5" aria-hidden="true" />{label}
+    </NavLink>)}
   </nav>
 }

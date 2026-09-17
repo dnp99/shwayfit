@@ -12,10 +12,10 @@ function FutureArea({ title, description }: { title: string; description: string
 }
 
 function ApplicationShell({ user }: { user: User }) {
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
   const area = pathname.split('/')[1]
   const content = area === 'clients'
-    ? <TrainerWorkspace email={user.email ?? ''} />
+    ? <TrainerWorkspace key={`${pathname}${search}`} email={user.email ?? ''} />
     : area === 'home'
       ? <FutureArea title="Home" description="Your trainer overview will bring upcoming sessions, package balances, and quick actions together after packages and scheduling are in place." />
       : area === 'packages'
