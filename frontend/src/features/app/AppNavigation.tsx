@@ -1,13 +1,20 @@
-import { CalendarDays, Dumbbell, Home, Package, Plus, Settings, Sparkles, Users } from 'lucide-react'
+import { CalendarDays, Dumbbell, LayoutDashboard, Package, Plus, Settings, Sparkles, Users } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router'
 import { ThemeToggle } from '../../components/ThemeToggle'
 import { Button } from '../../components/ui/button'
 import { cn } from '../../lib/utils'
 
 const desktopItems = [
-  { to: '/home', label: 'Today', icon: Home },
-  { to: '/clients', label: 'Clients', icon: Users },
+  { to: '/home', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/schedule', label: 'Calendar', icon: CalendarDays },
+  { to: '/clients', label: 'Clients', icon: Users },
+  { to: '/packages', label: 'Packages', icon: Package },
+] as const
+
+const mobileItems = [
+  { to: '/home', label: 'Today', icon: LayoutDashboard },
+  { to: '/schedule', label: 'Calendar', icon: CalendarDays },
+  { to: '/clients', label: 'Clients', icon: Users },
   { to: '/packages', label: 'Packages', icon: Package },
 ] as const
 
@@ -61,7 +68,6 @@ export function MobileHeader() {
 }
 
 export function MobileBottomNav() {
-  const mobileItems = [desktopItems[0], desktopItems[1], desktopItems[2], desktopItems[3]]
   return <nav className="fixed inset-x-0 bottom-0 z-30 grid min-h-16 grid-cols-5 border-t border-border bg-card/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur lg:hidden" aria-label="Primary product navigation">
     {mobileItems.slice(0, 2).map(({ to, label, icon: Icon }) => <NavLink className={({ isActive }) => cn('flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-lg px-2 text-[0.6875rem] font-medium transition-colors focus-visible:outline-3 focus-visible:outline-ring focus-visible:outline-offset-[-3px]', isActive ? 'text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground')} key={to} to={to}>
       <Icon className="size-5" aria-hidden="true" />{label}
