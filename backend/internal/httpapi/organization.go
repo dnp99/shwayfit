@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/dnp99/shwayfit/backend/internal/authn"
 	"github.com/dnp99/shwayfit/backend/internal/organization"
@@ -96,7 +97,41 @@ func registerOrganizationRoutes(mux *http.ServeMux, verifier authn.Verifier, ser
 		}
 		writeJSON(w, http.StatusCreated, clientPackage)
 	})))
+	mux.Handle("GET /api/v1/organizations/current/appointments", requireIdentity(verifier, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		from, to, ok := appointmentRange(w, r)
+		if !ok {
+			return
+		}
+		appointments, err := service.ListAppointments(r.Context(), identityFromContext(r.Context()), from, to)
+		if err != nil {
+			writeOrganizationError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"appointments": appointments})
+	})))
+	mux.Handle("POST /api/v1/organizations/current/appointments", requireIdentity(verifier, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var input organization.AppointmentInput
+		if !decodeJSON(w, r, &input) {
+			return
+		}
+		appointment, err := service.CreateAppointment(r.Context(), identityFromContext(r.Context()), input)
+		if err != nil {
+			writeOrganizationError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusCreated, appointment)
+	})))
 	registerPackageOptionRoutes(mux, verifier, service)
+}
+
+func appointmentRange(w http.ResponseWriter, r *http.Request) (time.Time, time.Time, bool) {
+	from, fromErr := time.Parse(time.RFC3339, r.URL.Query().Get("from"))
+	to, toErr := time.Parse(time.RFC3339, r.URL.Query().Get("to"))
+	if fromErr != nil || toErr != nil || !from.Before(to) {
+		writeError(w, http.StatusBadRequest, "invalid_request", "A valid appointment date range is required")
+		return time.Time{}, time.Time{}, false
+	}
+	return from, to, true
 }
 
 func registerPackageOptionRoutes(mux *http.ServeMux, verifier authn.Verifier, service *organization.Service) {
@@ -170,6 +205,10 @@ func writeOrganizationError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusConflict, "package_option_archived", "This package option is archived")
 	case errors.Is(err, organization.ErrActiveClientPackage):
 		writeError(w, http.StatusConflict, "active_client_package_exists", "This client already has an active package")
+	case errors.Is(err, organization.ErrNoActiveClientPackage):
+		writeError(w, http.StatusConflict, "active_client_package_required", "Assign an active package before booking an appointment")
+	case errors.Is(err, organization.ErrClientArchived):
+		writeError(w, http.StatusConflict, "client_archived", "Archived clients cannot be booked")
 	default:
 		writeError(w, http.StatusInternalServerError, "internal_error", "ShwayFit could not complete this request")
 	}

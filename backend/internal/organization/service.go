@@ -8,6 +8,7 @@ import (
 	"net/mail"
 	"regexp"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/dnp99/shwayfit/backend/internal/authn"
@@ -21,6 +22,8 @@ var (
 	ErrPackageOptionNotFound = errors.New("package option not found")
 	ErrPackageOptionArchived = errors.New("package option is archived")
 	ErrActiveClientPackage   = errors.New("client already has an active package")
+	ErrNoActiveClientPackage = errors.New("client has no active package")
+	ErrClientArchived        = errors.New("client is archived")
 	ErrInvalidInput          = errors.New("invalid input")
 )
 
@@ -86,6 +89,25 @@ type ClientPackage struct {
 	Status            string `json:"status"`
 }
 
+// Appointment records a scheduled session. Booking does not consume a package
+// session; a later completion operation will own that transaction.
+type Appointment struct {
+	ID                 string    `json:"id"`
+	ClientID           string    `json:"clientId"`
+	StartAt            time.Time `json:"startAt"`
+	DurationMinutes    int       `json:"durationMinutes"`
+	Notes              string    `json:"notes,omitempty"`
+	Status             string    `json:"status"`
+	AssignedTrainerUID string    `json:"-"`
+}
+
+type AppointmentInput struct {
+	ClientID        string    `json:"clientId"`
+	StartAt         time.Time `json:"startAt"`
+	DurationMinutes int       `json:"durationMinutes"`
+	Notes           string    `json:"notes"`
+}
+
 // Store is deliberately small so domain rules can be tested without Firestore.
 type Store interface {
 	CreateFirstOrganization(context.Context, authn.Identity, string) (Organization, error)
@@ -100,6 +122,58 @@ type Store interface {
 	ArchivePackageOption(context.Context, string, string) (PackageOption, error)
 	AssignClientPackage(context.Context, string, string, string) (ClientPackage, error)
 	ListClientPackages(context.Context, string, string) ([]ClientPackage, error)
+	CreateAppointment(context.Context, string, string, AppointmentInput) (Appointment, error)
+	ListAppointments(context.Context, string, time.Time, time.Time) ([]Appointment, error)
+}
+
+func (s *Service) CreateAppointment(ctx context.Context, identity authn.Identity, input AppointmentInput) (Appointment, error) {
+	if err := validateAppointmentInput(input); err != nil {
+		return Appointment{}, err
+	}
+	membership, err := s.activeMembership(ctx, identity.UID)
+	if err != nil {
+		return Appointment{}, err
+	}
+	client, err := s.store.GetClient(ctx, membership.OrganizationID, strings.TrimSpace(input.ClientID))
+	if err != nil {
+		return Appointment{}, err
+	}
+	if membership.Role != "owner" && client.AssignedTrainerUID != identity.UID {
+		return Appointment{}, ErrClientForbidden
+	}
+	if client.Status != "active" {
+		return Appointment{}, ErrClientArchived
+	}
+	packages, err := s.store.ListClientPackages(ctx, membership.OrganizationID, client.ID)
+	if err != nil {
+		return Appointment{}, err
+	}
+	if !hasActivePackage(packages) {
+		return Appointment{}, ErrNoActiveClientPackage
+	}
+	input.ClientID, input.Notes = strings.TrimSpace(input.ClientID), strings.TrimSpace(input.Notes)
+	return s.store.CreateAppointment(ctx, membership.OrganizationID, client.AssignedTrainerUID, input)
+}
+
+func (s *Service) ListAppointments(ctx context.Context, identity authn.Identity, from, to time.Time) ([]Appointment, error) {
+	if !from.Before(to) {
+		return nil, ErrInvalidInput
+	}
+	membership, err := s.activeMembership(ctx, identity.UID)
+	if err != nil {
+		return nil, err
+	}
+	appointments, err := s.store.ListAppointments(ctx, membership.OrganizationID, from, to)
+	if err != nil || membership.Role == "owner" {
+		return appointments, err
+	}
+	assigned := make([]Appointment, 0, len(appointments))
+	for _, appointment := range appointments {
+		if appointment.AssignedTrainerUID == identity.UID {
+			assigned = append(assigned, appointment)
+		}
+	}
+	return assigned, nil
 }
 
 func (s *Service) CreatePackageOption(ctx context.Context, identity authn.Identity, input PackageOptionInput) (PackageOption, error) {
@@ -295,6 +369,22 @@ func validatePackageOptionInput(input PackageOptionInput) error {
 		return ErrInvalidInput
 	}
 	return nil
+}
+
+func validateAppointmentInput(input AppointmentInput) error {
+	if strings.TrimSpace(input.ClientID) == "" || input.StartAt.IsZero() || input.DurationMinutes < 15 || input.DurationMinutes > 240 || input.DurationMinutes%5 != 0 || !optionalLength(input.Notes, 2000) {
+		return ErrInvalidInput
+	}
+	return nil
+}
+
+func hasActivePackage(packages []ClientPackage) bool {
+	for _, clientPackage := range packages {
+		if clientPackage.Status == "active" {
+			return true
+		}
+	}
+	return false
 }
 
 func normalizeClientInput(input ClientInput) ClientInput {

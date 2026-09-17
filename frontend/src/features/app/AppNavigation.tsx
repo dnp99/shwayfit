@@ -56,7 +56,7 @@ export function DesktopUtilityBar() {
   const navigate = useNavigate()
   return <header className="hidden min-h-20 items-center justify-between border-b border-border px-10 lg:flex">
     <p className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground"><Sparkles className="size-5 text-primary" aria-hidden="true" />Trainer workspace</p>
-    <div className="flex items-center gap-3"><ThemeToggle /><Button onClick={() => navigate('/schedule')} type="button"><Plus className="size-4" aria-hidden="true" />Book appointment</Button></div>
+    <div className="flex items-center gap-3"><ThemeToggle /><Button onClick={() => navigate('/schedule?book=1')} type="button"><Plus className="size-4" aria-hidden="true" />Book appointment</Button></div>
   </header>
 }
 

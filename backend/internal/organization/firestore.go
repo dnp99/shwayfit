@@ -3,6 +3,7 @@ package organization
 import (
 	"context"
 	"errors"
+	"time"
 
 	"cloud.google.com/go/firestore"
 	"github.com/dnp99/shwayfit/backend/internal/authn"
@@ -240,6 +241,36 @@ func (s *FirestoreStore) ListClientPackages(ctx context.Context, organizationID,
 	}
 }
 
+func (s *FirestoreStore) CreateAppointment(ctx context.Context, organizationID, assignedTrainerUID string, input AppointmentInput) (Appointment, error) {
+	ref := s.client.Collection("organizations").Doc(organizationID).Collection("appointments").NewDoc()
+	appointment := Appointment{ID: ref.ID, ClientID: input.ClientID, StartAt: input.StartAt, DurationMinutes: input.DurationMinutes, Notes: input.Notes, Status: "scheduled", AssignedTrainerUID: assignedTrainerUID}
+	data := map[string]any{
+		"clientId": appointment.ClientID, "assignedTrainerUid": appointment.AssignedTrainerUID,
+		"startAt": appointment.StartAt, "durationMinutes": appointment.DurationMinutes, "notes": appointment.Notes,
+		"status": appointment.Status, "createdAt": firestore.ServerTimestamp, "updatedAt": firestore.ServerTimestamp,
+	}
+	if _, err := ref.Create(ctx, data); err != nil {
+		return Appointment{}, err
+	}
+	return appointment, nil
+}
+
+func (s *FirestoreStore) ListAppointments(ctx context.Context, organizationID string, from, to time.Time) ([]Appointment, error) {
+	iter := s.client.Collection("organizations").Doc(organizationID).Collection("appointments").Where("startAt", ">=", from).Where("startAt", "<", to).OrderBy("startAt", firestore.Asc).Limit(200).Documents(ctx)
+	defer iter.Stop()
+	appointments := []Appointment{}
+	for {
+		snapshot, err := iter.Next()
+		if errors.Is(err, iterator.Done) {
+			return appointments, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		appointments = append(appointments, appointmentFromData(snapshot.Ref.ID, snapshot.Data()))
+	}
+}
+
 func clientData(input ClientInput) map[string]any {
 	return map[string]any{"firstName": input.FirstName, "lastName": input.LastName, "email": input.Email, "phone": input.Phone, "goals": input.Goals, "notes": input.Notes, "preferredStartTime": input.PreferredStartTime, "preferredEndTime": input.PreferredEndTime, "status": input.Status}
 }
@@ -278,4 +309,14 @@ func clientPackageFromData(id string, data map[string]any) ClientPackage {
 	remainingSessions, _ := data["remainingSessions"].(int64)
 	status, _ := data["status"].(string)
 	return ClientPackage{ID: id, PackageOptionID: packageOptionID, PackageName: packageName, IncludedSessions: int(includedSessions), RemainingSessions: int(remainingSessions), Status: status}
+}
+
+func appointmentFromData(id string, data map[string]any) Appointment {
+	clientID, _ := data["clientId"].(string)
+	assignedTrainerUID, _ := data["assignedTrainerUid"].(string)
+	startAt, _ := data["startAt"].(time.Time)
+	durationMinutes, _ := data["durationMinutes"].(int64)
+	notes, _ := data["notes"].(string)
+	status, _ := data["status"].(string)
+	return Appointment{ID: id, ClientID: clientID, StartAt: startAt, DurationMinutes: int(durationMinutes), Notes: notes, Status: status, AssignedTrainerUID: assignedTrainerUID}
 }

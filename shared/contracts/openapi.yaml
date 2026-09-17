@@ -205,6 +205,50 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/PackageOption' }
+  /organizations/current/appointments:
+    get:
+      operationId: listAppointments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date-time }
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, format: date-time }
+      responses:
+        '200':
+          description: Appointments in the requested time range.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [appointments]
+                properties:
+                  appointments:
+                    type: array
+                    items: { $ref: '#/components/schemas/Appointment' }
+    post:
+      operationId: createAppointment
+      summary: Books an appointment without consuming a package session.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AppointmentInput' }
+      responses:
+        '201':
+          description: Appointment booked. Overlapping appointments are permitted.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Appointment' }
+        '409':
+          description: The client is archived or has no active package.
   /organizations/current/package-options/{optionID}/archive:
     parameters:
       - name: optionID
@@ -289,7 +333,23 @@ components:
         packageName: { type: string }
         includedSessions: { type: integer }
         remainingSessions: { type: integer }
-        status: { type: string, enum: [active, completed] }
+            status: { type: string, enum: [active, completed] }
+    AppointmentInput:
+      type: object
+      required: [clientId, startAt, durationMinutes]
+      properties:
+        clientId: { type: string }
+        startAt: { type: string, format: date-time }
+        durationMinutes: { type: integer, minimum: 15, maximum: 240, multipleOf: 5 }
+        notes: { type: string, maxLength: 2000 }
+    Appointment:
+      allOf:
+        - $ref: '#/components/schemas/AppointmentInput'
+        - type: object
+          required: [id, status]
+          properties:
+            id: { type: string }
+            status: { type: string, enum: [scheduled] }
     Error:
       type: object
       required: [error]
