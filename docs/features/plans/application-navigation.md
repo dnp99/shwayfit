@@ -33,4 +33,4 @@ The shell deliberately uses the existing React Router routes and does not change
 3. **Package options:** allow a trainer to create and archive reusable package options at `/packages`.
 4. **Client packages:** assign an option to a client, create its opening balance, and write the immutable opening audit event in one transaction.
 5. **Scheduling:** book appointments against a client package, then complete a session with an idempotent balance adjustment and audit event.
-6. **Home and settings:** add the trainer overview and organization preferences once the underlying package and appointment records exist.
+6. **Home and settings:** the Today dashboard now combines the current day's agenda, weekly session count, active-client count, real package-balance attention items, direct client links, and the existing idempotent session-completion flow. Settings still needs trainer and organization preferences beyond its current session-security controls.
