@@ -43,29 +43,37 @@ type Membership struct {
 }
 
 type Client struct {
-	ID                 string `json:"id"`
-	FirstName          string `json:"firstName"`
-	LastName           string `json:"lastName"`
-	Email              string `json:"email,omitempty"`
-	Phone              string `json:"phone,omitempty"`
-	Goals              string `json:"goals,omitempty"`
-	Notes              string `json:"notes,omitempty"`
-	PreferredStartTime string `json:"preferredStartTime,omitempty"`
-	PreferredEndTime   string `json:"preferredEndTime,omitempty"`
-	Status             string `json:"status"`
-	AssignedTrainerUID string `json:"-"`
+	ID                       string   `json:"id"`
+	FirstName                string   `json:"firstName"`
+	LastName                 string   `json:"lastName"`
+	Email                    string   `json:"email,omitempty"`
+	Phone                    string   `json:"phone,omitempty"`
+	Goals                    string   `json:"goals,omitempty"`
+	Notes                    string   `json:"notes,omitempty"`
+	PreferredStartTime       string   `json:"preferredStartTime,omitempty"`
+	PreferredEndTime         string   `json:"preferredEndTime,omitempty"`
+	HeightCM                 *float64 `json:"heightCm,omitempty"`
+	StartingWeightKG         *float64 `json:"startingWeightKg,omitempty"`
+	StartingMeasurementDate  string   `json:"startingMeasurementDate,omitempty"`
+	StartingMeasurementNotes string   `json:"startingMeasurementNotes,omitempty"`
+	Status                   string   `json:"status"`
+	AssignedTrainerUID       string   `json:"-"`
 }
 
 type ClientInput struct {
-	FirstName          string `json:"firstName"`
-	LastName           string `json:"lastName"`
-	Email              string `json:"email"`
-	Phone              string `json:"phone"`
-	Goals              string `json:"goals"`
-	Notes              string `json:"notes"`
-	PreferredStartTime string `json:"preferredStartTime"`
-	PreferredEndTime   string `json:"preferredEndTime"`
-	Status             string `json:"status"`
+	FirstName                string   `json:"firstName"`
+	LastName                 string   `json:"lastName"`
+	Email                    string   `json:"email"`
+	Phone                    string   `json:"phone"`
+	Goals                    string   `json:"goals"`
+	Notes                    string   `json:"notes"`
+	PreferredStartTime       string   `json:"preferredStartTime"`
+	PreferredEndTime         string   `json:"preferredEndTime"`
+	HeightCM                 *float64 `json:"heightCm"`
+	StartingWeightKG         *float64 `json:"startingWeightKg"`
+	StartingMeasurementDate  string   `json:"startingMeasurementDate"`
+	StartingMeasurementNotes string   `json:"startingMeasurementNotes"`
+	Status                   string   `json:"status"`
 }
 
 // PackageOption is a reusable organization-scoped session allowance. Client
@@ -388,6 +396,9 @@ func validateClientInput(input ClientInput) error {
 	if !validTimeWindow(input.PreferredStartTime, input.PreferredEndTime) {
 		return ErrInvalidInput
 	}
+	if !validStartingMeasurement(input) {
+		return ErrInvalidInput
+	}
 	if email := strings.TrimSpace(input.Email); email != "" {
 		address, err := mail.ParseAddress(email)
 		if err != nil || address.Address != email || !optionalLength(email, 254) {
@@ -450,7 +461,22 @@ func normalizeClientInput(input ClientInput) ClientInput {
 	input.Email, input.Phone = strings.TrimSpace(input.Email), strings.TrimSpace(input.Phone)
 	input.Goals, input.Notes = strings.TrimSpace(input.Goals), strings.TrimSpace(input.Notes)
 	input.PreferredStartTime, input.PreferredEndTime = strings.TrimSpace(input.PreferredStartTime), strings.TrimSpace(input.PreferredEndTime)
+	input.StartingMeasurementDate, input.StartingMeasurementNotes = strings.TrimSpace(input.StartingMeasurementDate), strings.TrimSpace(input.StartingMeasurementNotes)
 	return input
+}
+
+func validStartingMeasurement(input ClientInput) bool {
+	if input.HeightCM != nil && (*input.HeightCM < 50 || *input.HeightCM > 300) {
+		return false
+	}
+	if input.StartingWeightKG == nil {
+		return input.StartingMeasurementDate == "" && input.StartingMeasurementNotes == ""
+	}
+	if *input.StartingWeightKG < 20 || *input.StartingWeightKG > 500 || !optionalLength(input.StartingMeasurementNotes, 500) {
+		return false
+	}
+	_, err := time.Parse("2006-01-02", input.StartingMeasurementDate)
+	return err == nil
 }
 
 var clockTimePattern = regexp.MustCompile(`^(?:[01][0-9]|2[0-3]):[0-5][0-9]$`)

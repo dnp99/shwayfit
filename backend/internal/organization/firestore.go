@@ -85,7 +85,12 @@ func (s *FirestoreStore) CreateClient(ctx context.Context, organizationID, assig
 	data["assignedTrainerUid"] = assignedTrainerUID
 	data["createdAt"] = firestore.ServerTimestamp
 	data["updatedAt"] = firestore.ServerTimestamp
-	if _, err := ref.Create(ctx, data); err != nil {
+	batch := s.client.Batch()
+	batch.Create(ref, data)
+	if input.StartingWeightKG != nil {
+		batch.Create(ref.Collection("measurements").Doc("starting"), startingMeasurementData(input))
+	}
+	if _, err := batch.Commit(ctx); err != nil {
 		return Client{}, err
 	}
 	return clientFromData(ref.ID, data), nil
@@ -122,7 +127,15 @@ func (s *FirestoreStore) UpdateClient(ctx context.Context, organizationID, clien
 	ref := s.client.Collection("organizations").Doc(organizationID).Collection("clients").Doc(clientID)
 	data := clientData(input)
 	data["updatedAt"] = firestore.ServerTimestamp
-	if _, err := ref.Update(ctx, toUpdates(data)); status.Code(err) == codes.NotFound {
+	batch := s.client.Batch()
+	batch.Update(ref, toUpdates(data))
+	startingMeasurementRef := ref.Collection("measurements").Doc("starting")
+	if input.StartingWeightKG == nil {
+		batch.Delete(startingMeasurementRef)
+	} else {
+		batch.Set(startingMeasurementRef, startingMeasurementData(input))
+	}
+	if _, err := batch.Commit(ctx); status.Code(err) == codes.NotFound {
 		return Client{}, ErrClientNotFound
 	} else if err != nil {
 		return Client{}, err
@@ -384,7 +397,14 @@ func (s *FirestoreStore) CompleteAppointment(ctx context.Context, organizationID
 }
 
 func clientData(input ClientInput) map[string]any {
-	return map[string]any{"firstName": input.FirstName, "lastName": input.LastName, "email": input.Email, "phone": input.Phone, "goals": input.Goals, "notes": input.Notes, "preferredStartTime": input.PreferredStartTime, "preferredEndTime": input.PreferredEndTime, "status": input.Status}
+	return map[string]any{"firstName": input.FirstName, "lastName": input.LastName, "email": input.Email, "phone": input.Phone, "goals": input.Goals, "notes": input.Notes, "preferredStartTime": input.PreferredStartTime, "preferredEndTime": input.PreferredEndTime, "heightCm": input.HeightCM, "startingWeightKg": input.StartingWeightKG, "startingMeasurementDate": input.StartingMeasurementDate, "startingMeasurementNotes": input.StartingMeasurementNotes, "status": input.Status}
+}
+
+// The client document keeps the baseline available to the profile without an
+// additional read. The matching stable-keyed document is the first entry
+// for the future measurement-history feature.
+func startingMeasurementData(input ClientInput) map[string]any {
+	return map[string]any{"weightKg": input.StartingWeightKG, "recordedOn": input.StartingMeasurementDate, "notes": input.StartingMeasurementNotes, "kind": "starting", "updatedAt": firestore.ServerTimestamp}
 }
 func toUpdates(data map[string]any) []firestore.Update {
 	updates := make([]firestore.Update, 0, len(data))
@@ -402,9 +422,31 @@ func clientFromData(id string, data map[string]any) Client {
 	notes, _ := data["notes"].(string)
 	preferredStartTime, _ := data["preferredStartTime"].(string)
 	preferredEndTime, _ := data["preferredEndTime"].(string)
+	heightCM := optionalNumberFromData(data, "heightCm")
+	startingWeightKG := optionalNumberFromData(data, "startingWeightKg")
+	startingMeasurementDate, _ := data["startingMeasurementDate"].(string)
+	startingMeasurementNotes, _ := data["startingMeasurementNotes"].(string)
 	status, _ := data["status"].(string)
 	assignedTrainerUID, _ := data["assignedTrainerUid"].(string)
-	return Client{ID: id, FirstName: firstName, LastName: lastName, Email: email, Phone: phone, Goals: goals, Notes: notes, PreferredStartTime: preferredStartTime, PreferredEndTime: preferredEndTime, Status: status, AssignedTrainerUID: assignedTrainerUID}
+	client := Client{ID: id, FirstName: firstName, LastName: lastName, Email: email, Phone: phone, Goals: goals, Notes: notes, PreferredStartTime: preferredStartTime, PreferredEndTime: preferredEndTime, StartingMeasurementDate: startingMeasurementDate, StartingMeasurementNotes: startingMeasurementNotes, Status: status, AssignedTrainerUID: assignedTrainerUID}
+	client.HeightCM = heightCM
+	client.StartingWeightKG = startingWeightKG
+	return client
+}
+
+func optionalNumberFromData(data map[string]any, key string) *float64 {
+	switch value := data[key].(type) {
+	case float64:
+		return &value
+	case int64:
+		converted := float64(value)
+		return &converted
+	case int:
+		converted := float64(value)
+		return &converted
+	default:
+		return nil
+	}
 }
 
 func packageOptionFromData(id string, data map[string]any) PackageOption {
