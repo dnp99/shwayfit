@@ -39,6 +39,8 @@ The POC has a one-time, authenticated organization bootstrap: `POST /api/v1/orga
 - `GET /api/v1/organizations/current/clients/{clientID}`
 - `PATCH /api/v1/organizations/current/clients/{clientID}`
 
+`GET` and `PATCH /api/v1/organizations/current/trainer-profile` manage the signed-in trainer's workspace profile. The response returns the Firebase/Google name and verified email for display, while the update endpoint accepts only an optional phone number. ShwayFit does not duplicate the trainer's Google identity in Firestore; the navigation shell uses the Firebase name and email.
+
 The API bounds JSON requests to 64 KiB, rejects unknown fields, and returns the common JSON error shape. First and last name are required. Email, phone, goals, private notes, and a preferred local time window are optional; client status is `active` or `archived`. When supplied, email must be a valid mailbox address. A phone number must use normal phone formatting characters and contain 7–15 digits. When present, the time window has a `preferredStartTime` and `preferredEndTime` in zero-padded 24-hour `HH:MM` format, and the end must follow the start. It records a scheduling preference only; it does not book an appointment.
 
 Optional baseline measurements include `heightCm` (50–300 cm) and a dated `startingWeightKg` (20–500 kg). A starting weight requires an ISO `startingMeasurementDate` and may include 500 characters of context. Height is stored with the client profile. A starting weight is also written to the client’s `measurements/starting` record so a later measurement-history feature has a dated first entry. Delete is intentionally not available.
