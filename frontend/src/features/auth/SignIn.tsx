@@ -2,12 +2,13 @@ import { getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signInWithPo
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { ThemeToggle } from '../../components/ThemeToggle'
-import { getFirebaseAuth, restoreFirebaseAuthSession } from '../../lib/firebase'
+import { beginFirebaseAuthSession, configureFirebaseAuthPersistence, getFirebaseAuth, restoreFirebaseAuthSession } from '../../lib/firebase'
 
 export function SignIn() {
   const [error, setError] = useState<string | null>(null)
   const [isSigningIn, setIsSigningIn] = useState(false)
   const [isCheckingRedirect, setIsCheckingRedirect] = useState(true)
+  const [isTrustedDevice, setIsTrustedDevice] = useState(false)
   const navigate = useNavigate()
 
   const completeSignIn = useCallback(async (user: User) => {
@@ -19,6 +20,7 @@ export function SignIn() {
       throw new Error('ShwayFit could not verify this sign-in. Please try again.')
     }
     await response.json()
+    beginFirebaseAuthSession()
     navigate('/clients', { replace: true })
   }, [navigate])
 
@@ -51,6 +53,7 @@ export function SignIn() {
     setIsSigningIn(true)
     try {
       const auth = getFirebaseAuth()
+      await configureFirebaseAuthPersistence(isTrustedDevice)
       try {
         const credential = await signInWithPopup(auth, new GoogleAuthProvider())
         await completeSignIn(credential.user)
@@ -82,6 +85,7 @@ export function SignIn() {
         ) : (
           <>
             <p>Sign in with the Google account connected to your training business.</p>
+            <label className="sign-in-trusted-device"><input checked={isTrustedDevice} onChange={(event) => setIsTrustedDevice(event.target.checked)} type="checkbox" /><span>Stay signed in on this personal device</span></label>
             <button className="button" type="button" onClick={signIn} disabled={isSigningIn}>
               {isSigningIn ? 'Signing in…' : 'Continue with Google'}
             </button>

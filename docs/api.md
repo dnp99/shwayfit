@@ -24,6 +24,10 @@ Shared endpoint contracts will live in [`../shared/contracts/`](../shared/contra
 
 Requires `Authorization: Bearer <Firebase ID token>`. The API verifies the token and returns the authenticated Firebase identity. It does not itself authorize organization data; the organization and client endpoints below enforce membership, role, and client assignment.
 
+## `POST /api/v1/session/revoke`
+
+Requires `Authorization: Bearer <Firebase ID token>`. Revokes the current trainer's Firebase refresh tokens and returns `204 No Content`. The browser then signs itself out locally. Every protected API request verifies Firebase token revocation, so an ID token issued before revocation is rejected once Firebase reports it revoked. The endpoint returns `503 authentication_unavailable` if Firebase cannot perform the revocation.
+
 ## Organization and client records
 
 The POC has a one-time, authenticated organization bootstrap: `POST /api/v1/organizations` accepts a 2–80-character business name and creates the caller's organization plus an active `owner` membership. A caller with a membership receives `409 organization_already_exists` rather than being able to create another organization.

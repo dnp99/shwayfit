@@ -27,6 +27,19 @@ paths:
                 $ref: '#/components/schemas/Identity'
         '401':
           $ref: '#/components/responses/Unauthenticated'
+  /session/revoke:
+    post:
+      operationId: revokeCurrentUserSessions
+      summary: Revokes the current trainer's Firebase sessions on all devices.
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Sessions revoked.
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '503':
+          description: Firebase session revocation is unavailable.
   /organizations:
     post:
       operationId: createFirstOrganization
