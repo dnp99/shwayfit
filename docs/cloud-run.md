@@ -4,6 +4,8 @@ The API service is named `shwayfit-api` and runs in `northamerica-northeast1`, a
 
 The API's public health endpoint is intentionally unauthenticated. It contains no client data and supports Cloud Run health checks.
 
+Firebase Hosting sends `Cache-Control: no-cache` for application responses. Vite fingerprints JavaScript and CSS on every deployment; revalidating the application HTML prevents a cached page from requesting removed assets and receiving the single-page-app HTML fallback.
+
 ## Deployment command
 
 With Google Cloud CLI authentication available, deploy from the repository root:
