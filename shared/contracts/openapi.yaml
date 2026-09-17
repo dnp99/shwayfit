@@ -248,7 +248,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Appointment' }
         '409':
-          description: The client is archived or has no active package.
+          description: The client is archived or has no active package session remaining.
   /organizations/current/package-options/{optionID}/archive:
     parameters:
       - name: optionID

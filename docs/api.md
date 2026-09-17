@@ -43,7 +43,7 @@ The verified Firebase identity is mapped to `trainerMemberships/{uid}`. Client d
 
 `GET /api/v1/organizations/current/appointments?from=<RFC3339>&to=<RFC3339>` returns appointments in the requested visible calendar period. `POST /api/v1/organizations/current/appointments` creates a scheduled appointment with `clientId`, an RFC3339 `startAt`, a duration from 15 to 240 minutes in five-minute increments, and optional notes.
 
-Appointments are stored under `organizations/{organizationId}/appointments`. Booking requires an active client with an active client package but does not consume a package session. The service permits overlapping appointments; the authenticated UI detects overlap with appointments already loaded for the selected period and warns before saving.
+Appointments are stored under `organizations/{organizationId}/appointments`. Booking requires an active client with an active package containing at least one remaining session; it does not reserve or consume a package session. The service permits overlapping appointments; the authenticated UI detects overlap with appointments already loaded for the selected period and warns before saving.
 
 `POST /api/v1/organizations/current/appointments/{appointmentID}/complete` requires an `Idempotency-Key` header (8–200 characters). In one Firestore transaction it marks a scheduled appointment completed, deducts one session from the client’s active package, and creates an immutable `session_completed` audit event under that package. If the last session is consumed, the package is marked completed and removed as the client’s active package. A zero balance blocks completion; ShwayFit does not allow negative balances.
 

@@ -162,8 +162,8 @@ func (s *Service) CreateAppointment(ctx context.Context, identity authn.Identity
 	if err != nil {
 		return Appointment{}, err
 	}
-	if !hasActivePackage(packages) {
-		return Appointment{}, ErrNoActiveClientPackage
+	if !hasRemainingPackageSession(packages) {
+		return Appointment{}, ErrNoRemainingSessions
 	}
 	input.ClientID, input.Notes = strings.TrimSpace(input.ClientID), strings.TrimSpace(input.Notes)
 	return s.store.CreateAppointment(ctx, membership.OrganizationID, client.AssignedTrainerUID, input)
@@ -411,9 +411,9 @@ func validateAppointmentInput(input AppointmentInput) error {
 	return nil
 }
 
-func hasActivePackage(packages []ClientPackage) bool {
+func hasRemainingPackageSession(packages []ClientPackage) bool {
 	for _, clientPackage := range packages {
-		if clientPackage.Status == "active" {
+		if clientPackage.Status == "active" && clientPackage.RemainingSessions > 0 {
 			return true
 		}
 	}

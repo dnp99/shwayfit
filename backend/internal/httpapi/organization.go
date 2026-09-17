@@ -216,7 +216,7 @@ func writeOrganizationError(w http.ResponseWriter, err error) {
 	case errors.Is(err, organization.ErrNoActiveClientPackage):
 		writeError(w, http.StatusConflict, "active_client_package_required", "Assign an active package before booking an appointment")
 	case errors.Is(err, organization.ErrNoRemainingSessions):
-		writeError(w, http.StatusConflict, "package_balance_exhausted", "This client has no sessions remaining. Assign a new package before completing this session")
+		writeError(w, http.StatusConflict, "package_balance_exhausted", "This client has no sessions remaining. Assign a new package before booking or completing a session")
 	case errors.Is(err, organization.ErrClientArchived):
 		writeError(w, http.StatusConflict, "client_archived", "Archived clients cannot be booked")
 	case errors.Is(err, organization.ErrAppointmentNotFound):

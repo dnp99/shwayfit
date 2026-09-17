@@ -54,7 +54,7 @@ func (s *fakeStore) ListClientPackages(_ context.Context, _ string, _ string) ([
 	if s.packages != nil {
 		return s.packages, nil
 	}
-	return []ClientPackage{{ID: "package-a", Status: "active"}}, nil
+	return []ClientPackage{{ID: "package-a", Status: "active", RemainingSessions: 1}}, nil
 }
 func (s *fakeStore) CreateAppointment(_ context.Context, _ string, _ string, input AppointmentInput) (Appointment, error) {
 	return Appointment{ID: "appointment-a", ClientID: input.ClientID, StartAt: input.StartAt, DurationMinutes: input.DurationMinutes, Notes: input.Notes, Status: "scheduled"}, nil
@@ -191,8 +191,16 @@ func TestCreateAppointmentValidatesScheduleInput(t *testing.T) {
 func TestCreateAppointmentRequiresAnActivePackage(t *testing.T) {
 	service := NewService(&fakeStore{membership: Membership{OrganizationID: "organization-a", Role: "owner", Active: true}, client: Client{ID: "client-a", Status: "active"}, packages: []ClientPackage{}})
 	_, err := service.CreateAppointment(context.Background(), authn.Identity{UID: "owner-a"}, AppointmentInput{ClientID: "client-a", StartAt: time.Date(2026, time.September, 17, 9, 0, 0, 0, time.UTC), DurationMinutes: 60})
-	if err != ErrNoActiveClientPackage {
-		t.Fatalf("error = %v, want %v", err, ErrNoActiveClientPackage)
+	if err != ErrNoRemainingSessions {
+		t.Fatalf("error = %v, want %v", err, ErrNoRemainingSessions)
+	}
+}
+
+func TestCreateAppointmentRequiresRemainingPackageSessions(t *testing.T) {
+	service := NewService(&fakeStore{membership: Membership{OrganizationID: "organization-a", Role: "owner", Active: true}, client: Client{ID: "client-a", Status: "active"}, packages: []ClientPackage{{ID: "package-a", Status: "active", RemainingSessions: 0}}})
+	_, err := service.CreateAppointment(context.Background(), authn.Identity{UID: "owner-a"}, AppointmentInput{ClientID: "client-a", StartAt: time.Date(2026, time.September, 17, 9, 0, 0, 0, time.UTC), DurationMinutes: 60})
+	if err != ErrNoRemainingSessions {
+		t.Fatalf("error = %v, want %v", err, ErrNoRemainingSessions)
 	}
 }
 
