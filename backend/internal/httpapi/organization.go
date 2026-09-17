@@ -121,6 +121,14 @@ func registerOrganizationRoutes(mux *http.ServeMux, verifier authn.Verifier, ser
 		}
 		writeJSON(w, http.StatusCreated, appointment)
 	})))
+	mux.Handle("POST /api/v1/organizations/current/appointments/{appointmentID}/complete", requireIdentity(verifier, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		completion, err := service.CompleteAppointment(r.Context(), identityFromContext(r.Context()), r.PathValue("appointmentID"), r.Header.Get("Idempotency-Key"))
+		if err != nil {
+			writeOrganizationError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, completion)
+	})))
 	registerPackageOptionRoutes(mux, verifier, service)
 }
 
@@ -207,8 +215,16 @@ func writeOrganizationError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusConflict, "active_client_package_exists", "This client already has an active package")
 	case errors.Is(err, organization.ErrNoActiveClientPackage):
 		writeError(w, http.StatusConflict, "active_client_package_required", "Assign an active package before booking an appointment")
+	case errors.Is(err, organization.ErrNoRemainingSessions):
+		writeError(w, http.StatusConflict, "package_balance_exhausted", "This client has no sessions remaining. Assign a new package before completing this session")
 	case errors.Is(err, organization.ErrClientArchived):
 		writeError(w, http.StatusConflict, "client_archived", "Archived clients cannot be booked")
+	case errors.Is(err, organization.ErrAppointmentNotFound):
+		writeError(w, http.StatusNotFound, "appointment_not_found", "Appointment not found")
+	case errors.Is(err, organization.ErrAppointmentCompleted):
+		writeError(w, http.StatusConflict, "appointment_already_completed", "This appointment has already been completed")
+	case errors.Is(err, organization.ErrIdempotencyKeyReuse):
+		writeError(w, http.StatusConflict, "idempotency_key_reused", "This completion request key was used for another appointment")
 	default:
 		writeError(w, http.StatusInternalServerError, "internal_error", "ShwayFit could not complete this request")
 	}

@@ -271,6 +271,118 @@ func (s *FirestoreStore) ListAppointments(ctx context.Context, organizationID st
 	}
 }
 
+func (s *FirestoreStore) GetAppointment(ctx context.Context, organizationID, appointmentID string) (Appointment, error) {
+	snapshot, err := s.client.Collection("organizations").Doc(organizationID).Collection("appointments").Doc(appointmentID).Get(ctx)
+	if status.Code(err) == codes.NotFound {
+		return Appointment{}, ErrAppointmentNotFound
+	}
+	if err != nil {
+		return Appointment{}, err
+	}
+	return appointmentFromData(snapshot.Ref.ID, snapshot.Data()), nil
+}
+
+func (s *FirestoreStore) CompleteAppointment(ctx context.Context, organizationID, appointmentID, completedByUID, idempotencyKey string) (completion AppointmentCompletion, resultErr error) {
+	organizationRef := s.client.Collection("organizations").Doc(organizationID)
+	appointmentRef := organizationRef.Collection("appointments").Doc(appointmentID)
+	// A dedicated key document makes a client retry idempotent within the same
+	// transaction as the balance change. Keys are scoped to an organization.
+	keyRef := organizationRef.Collection("appointmentCompletionKeys").Doc(idempotencyKey)
+	resultErr = s.client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+		keySnapshot, err := tx.Get(keyRef)
+		if err == nil {
+			storedAppointmentID, _ := keySnapshot.Data()["appointmentId"].(string)
+			if storedAppointmentID != appointmentID {
+				return ErrIdempotencyKeyReuse
+			}
+			appointmentSnapshot, err := tx.Get(appointmentRef)
+			if status.Code(err) == codes.NotFound {
+				return ErrAppointmentNotFound
+			}
+			if err != nil {
+				return err
+			}
+			completion.Appointment = appointmentFromData(appointmentRef.ID, appointmentSnapshot.Data())
+			packageID, _ := keySnapshot.Data()["packageId"].(string)
+			packageSnapshot, err := tx.Get(organizationRef.Collection("clients").Doc(completion.Appointment.ClientID).Collection("packages").Doc(packageID))
+			if err != nil {
+				return err
+			}
+			completion.ClientPackage = clientPackageFromData(packageID, packageSnapshot.Data())
+			return nil
+		}
+		if status.Code(err) != codes.NotFound {
+			return err
+		}
+
+		appointmentSnapshot, err := tx.Get(appointmentRef)
+		if status.Code(err) == codes.NotFound {
+			return ErrAppointmentNotFound
+		}
+		if err != nil {
+			return err
+		}
+		appointment := appointmentFromData(appointmentRef.ID, appointmentSnapshot.Data())
+		if appointment.Status == "completed" {
+			return ErrAppointmentCompleted
+		}
+		if appointment.Status != "scheduled" {
+			return ErrInvalidInput
+		}
+		clientRef := organizationRef.Collection("clients").Doc(appointment.ClientID)
+		clientSnapshot, err := tx.Get(clientRef)
+		if status.Code(err) == codes.NotFound {
+			return ErrClientNotFound
+		}
+		if err != nil {
+			return err
+		}
+		packageID, _ := clientSnapshot.Data()["activePackageId"].(string)
+		if packageID == "" {
+			return ErrNoRemainingSessions
+		}
+		packageRef := clientRef.Collection("packages").Doc(packageID)
+		packageSnapshot, err := tx.Get(packageRef)
+		if err != nil {
+			return err
+		}
+		clientPackage := clientPackageFromData(packageID, packageSnapshot.Data())
+		if clientPackage.Status != "active" {
+			return ErrNoRemainingSessions
+		}
+		if clientPackage.RemainingSessions < 1 {
+			return ErrNoRemainingSessions
+		}
+		clientPackage.RemainingSessions--
+		if clientPackage.RemainingSessions == 0 {
+			clientPackage.Status = "completed"
+		}
+		auditRef := packageRef.Collection("auditEvents").NewDoc()
+		if err := tx.Update(appointmentRef, []firestore.Update{{Path: "status", Value: "completed"}, {Path: "completedAt", Value: firestore.ServerTimestamp}, {Path: "completedByUid", Value: completedByUID}, {Path: "updatedAt", Value: firestore.ServerTimestamp}}); err != nil {
+			return err
+		}
+		if err := tx.Update(packageRef, []firestore.Update{{Path: "remainingSessions", Value: clientPackage.RemainingSessions}, {Path: "status", Value: clientPackage.Status}, {Path: "updatedAt", Value: firestore.ServerTimestamp}}); err != nil {
+			return err
+		}
+		if clientPackage.Status == "completed" {
+			if err := tx.Update(clientRef, []firestore.Update{{Path: "activePackageId", Value: firestore.Delete}, {Path: "updatedAt", Value: firestore.ServerTimestamp}}); err != nil {
+				return err
+			}
+		}
+		audit := map[string]any{"type": "session_completed", "appointmentId": appointment.ID, "balanceDelta": -1, "balanceAfter": clientPackage.RemainingSessions, "completedByUid": completedByUID, "createdAt": firestore.ServerTimestamp}
+		if err := tx.Create(auditRef, audit); err != nil {
+			return err
+		}
+		if err := tx.Create(keyRef, map[string]any{"appointmentId": appointment.ID, "packageId": packageID, "createdAt": firestore.ServerTimestamp}); err != nil {
+			return err
+		}
+		appointment.Status = "completed"
+		completion = AppointmentCompletion{Appointment: appointment, ClientPackage: clientPackage}
+		return nil
+	})
+	return completion, resultErr
+}
+
 func clientData(input ClientInput) map[string]any {
 	return map[string]any{"firstName": input.FirstName, "lastName": input.LastName, "email": input.Email, "phone": input.Phone, "goals": input.Goals, "notes": input.Notes, "preferredStartTime": input.PreferredStartTime, "preferredEndTime": input.PreferredEndTime, "status": input.Status}
 }

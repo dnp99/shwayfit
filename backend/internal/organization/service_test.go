@@ -9,10 +9,12 @@ import (
 )
 
 type fakeStore struct {
-	membership Membership
-	client     Client
-	options    []PackageOption
-	packages   []ClientPackage
+	membership  Membership
+	client      Client
+	options     []PackageOption
+	packages    []ClientPackage
+	appointment Appointment
+	completion  AppointmentCompletion
 }
 
 func (s *fakeStore) CreateFirstOrganization(_ context.Context, _ authn.Identity, name string) (Organization, error) {
@@ -57,7 +59,21 @@ func (s *fakeStore) ListClientPackages(_ context.Context, _ string, _ string) ([
 func (s *fakeStore) CreateAppointment(_ context.Context, _ string, _ string, input AppointmentInput) (Appointment, error) {
 	return Appointment{ID: "appointment-a", ClientID: input.ClientID, StartAt: input.StartAt, DurationMinutes: input.DurationMinutes, Notes: input.Notes, Status: "scheduled"}, nil
 }
-func (s *fakeStore) ListAppointments(_ context.Context, _ string, _ time.Time, _ time.Time) ([]Appointment, error) { return []Appointment{}, nil }
+func (s *fakeStore) ListAppointments(_ context.Context, _ string, _ time.Time, _ time.Time) ([]Appointment, error) {
+	return []Appointment{}, nil
+}
+func (s *fakeStore) GetAppointment(_ context.Context, _ string, _ string) (Appointment, error) {
+	if s.appointment.ID != "" {
+		return s.appointment, nil
+	}
+	return Appointment{ID: "appointment-a", ClientID: "client-a", AssignedTrainerUID: s.client.AssignedTrainerUID, Status: "scheduled"}, nil
+}
+func (s *fakeStore) CompleteAppointment(_ context.Context, _ string, appointmentID, _ string, _ string) (AppointmentCompletion, error) {
+	if s.completion.Appointment.ID != "" {
+		return s.completion, nil
+	}
+	return AppointmentCompletion{Appointment: Appointment{ID: appointmentID, ClientID: "client-a", Status: "completed"}, ClientPackage: ClientPackage{ID: "package-a", RemainingSessions: 4, Status: "active"}}, nil
+}
 
 func TestClientAccessRejectsUnassignedTrainer(t *testing.T) {
 	service := NewService(&fakeStore{membership: Membership{OrganizationID: "organization-a", Role: "trainer", Active: true}, client: Client{ID: "client-a", AssignedTrainerUID: "other-trainer"}})
@@ -177,5 +193,26 @@ func TestCreateAppointmentRequiresAnActivePackage(t *testing.T) {
 	_, err := service.CreateAppointment(context.Background(), authn.Identity{UID: "owner-a"}, AppointmentInput{ClientID: "client-a", StartAt: time.Date(2026, time.September, 17, 9, 0, 0, 0, time.UTC), DurationMinutes: 60})
 	if err != ErrNoActiveClientPackage {
 		t.Fatalf("error = %v, want %v", err, ErrNoActiveClientPackage)
+	}
+}
+
+func TestCompleteAppointmentAllowsAssignedTrainer(t *testing.T) {
+	service := NewService(&fakeStore{membership: Membership{OrganizationID: "organization-a", Role: "trainer", Active: true}, client: Client{ID: "client-a", AssignedTrainerUID: "trainer-a"}, appointment: Appointment{ID: "appointment-a", ClientID: "client-a", AssignedTrainerUID: "trainer-a", Status: "scheduled"}})
+	completion, err := service.CompleteAppointment(context.Background(), authn.Identity{UID: "trainer-a"}, "appointment-a", "completion-key-123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if completion.Appointment.Status != "completed" || completion.ClientPackage.RemainingSessions != 4 {
+		t.Fatalf("completion = %#v", completion)
+	}
+}
+
+func TestCompleteAppointmentRejectsInvalidKeyAndUnassignedTrainer(t *testing.T) {
+	service := NewService(&fakeStore{membership: Membership{OrganizationID: "organization-a", Role: "trainer", Active: true}, client: Client{ID: "client-a", AssignedTrainerUID: "other-trainer"}, appointment: Appointment{ID: "appointment-a", ClientID: "client-a", AssignedTrainerUID: "other-trainer", Status: "scheduled"}})
+	if _, err := service.CompleteAppointment(context.Background(), authn.Identity{UID: "trainer-a"}, "appointment-a", "short"); err != ErrInvalidInput {
+		t.Fatalf("short key error = %v", err)
+	}
+	if _, err := service.CompleteAppointment(context.Background(), authn.Identity{UID: "trainer-a"}, "appointment-a", "completion-key-123"); err != ErrClientForbidden {
+		t.Fatalf("access error = %v", err)
 	}
 }

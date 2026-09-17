@@ -114,6 +114,21 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Client' }
+    patch:
+      operationId: updateClient
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClientInput' }
+      responses:
+        '200':
+          description: Client updated.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Client' }
   /organizations/current/clients/{clientID}/packages:
     parameters:
       - name: clientID
@@ -158,21 +173,6 @@ paths:
               schema: { $ref: '#/components/schemas/ClientPackage' }
         '409':
           description: The option is archived or the client already has an active package.
-    patch:
-      operationId: updateClient
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/ClientInput' }
-      responses:
-        '200':
-          description: Client updated.
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/Client' }
   /organizations/current/package-options:
     get:
       operationId: listPackageOptions
@@ -266,6 +266,29 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/PackageOption' }
+  /organizations/current/appointments/{appointmentID}/complete:
+    parameters:
+      - name: appointmentID
+        in: path
+        required: true
+        schema: { type: string }
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema: { type: string, minLength: 8, maxLength: 200 }
+    post:
+      operationId: completeAppointment
+      summary: Completes one scheduled appointment and atomically debits one package session.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The completed appointment and its updated package balance. Retrying with the same key returns this result without another debit.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppointmentCompletion' }
+        '409':
+          description: The appointment is already complete, its key is reused, or its package has no remaining sessions.
 components:
   securitySchemes:
     bearerAuth:
@@ -333,7 +356,7 @@ components:
         packageName: { type: string }
         includedSessions: { type: integer }
         remainingSessions: { type: integer }
-            status: { type: string, enum: [active, completed] }
+        status: { type: string, enum: [active, completed] }
     AppointmentInput:
       type: object
       required: [clientId, startAt, durationMinutes]
@@ -349,7 +372,13 @@ components:
           required: [id, status]
           properties:
             id: { type: string }
-            status: { type: string, enum: [scheduled] }
+            status: { type: string, enum: [scheduled, completed] }
+    AppointmentCompletion:
+      type: object
+      required: [appointment, clientPackage]
+      properties:
+        appointment: { $ref: '#/components/schemas/Appointment' }
+        clientPackage: { $ref: '#/components/schemas/ClientPackage' }
     Error:
       type: object
       required: [error]
