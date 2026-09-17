@@ -14,6 +14,7 @@ import (
 // custom claims, so membership changes take effect immediately.
 type Identity struct {
 	UID           string
+	Name          string
 	Email         string
 	EmailVerified bool
 }
@@ -59,8 +60,9 @@ func (v *FirebaseVerifier) VerifyIDToken(ctx context.Context, rawToken string) (
 		return Identity{}, err
 	}
 	email, _ := token.Claims["email"].(string)
+	name, _ := token.Claims["name"].(string)
 	emailVerified, _ := token.Claims["email_verified"].(bool)
-	return Identity{UID: token.UID, Email: email, EmailVerified: emailVerified}, nil
+	return Identity{UID: token.UID, Name: name, Email: email, EmailVerified: emailVerified}, nil
 }
 
 // RevokeRefreshTokens prevents Firebase refresh tokens issued before this call

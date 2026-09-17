@@ -15,6 +15,7 @@ type fakeStore struct {
 	packages    []ClientPackage
 	appointment Appointment
 	completion  AppointmentCompletion
+	profile     TrainerProfile
 }
 
 func (s *fakeStore) CreateFirstOrganization(_ context.Context, _ authn.Identity, name string) (Organization, error) {
@@ -22,6 +23,13 @@ func (s *fakeStore) CreateFirstOrganization(_ context.Context, _ authn.Identity,
 }
 func (s *fakeStore) CurrentMembership(_ context.Context, _ string) (Membership, error) {
 	return s.membership, nil
+}
+func (s *fakeStore) GetTrainerProfile(_ context.Context, _ string) (TrainerProfile, error) {
+	return s.profile, nil
+}
+func (s *fakeStore) UpdateTrainerProfile(_ context.Context, _ string, _ string, input TrainerProfileInput) (TrainerProfile, error) {
+	s.profile = TrainerProfile{Phone: input.Phone}
+	return s.profile, nil
 }
 func (s *fakeStore) GetOrganization(_ context.Context, id string) (Organization, error) {
 	return Organization{ID: id, DisplayName: "Northstar Training"}, nil
@@ -80,6 +88,26 @@ func TestClientAccessRejectsUnassignedTrainer(t *testing.T) {
 	_, err := service.GetClient(context.Background(), authn.Identity{UID: "trainer-a"}, "client-a")
 	if err != ErrClientForbidden {
 		t.Fatalf("error = %v; want %v", err, ErrClientForbidden)
+	}
+}
+
+func TestTrainerProfileRequiresAnActiveMembershipAndValidPhone(t *testing.T) {
+	service := NewService(&fakeStore{membership: Membership{OrganizationID: "organization-a", Role: "owner", Active: true}})
+	identity := authn.Identity{UID: "trainer-a", Name: "Avery Trainer", Email: "google@example.com"}
+	profile, err := service.UpdateTrainerProfile(context.Background(), identity, TrainerProfileInput{Phone: "+1 (416) 555-0123"})
+	if err != nil || profile.Name != "Avery Trainer" || profile.Email != "google@example.com" {
+		t.Fatalf("profile = %#v, err = %v", profile, err)
+	}
+	if _, err := service.UpdateTrainerProfile(context.Background(), identity, TrainerProfileInput{Phone: "call me"}); err != ErrInvalidInput {
+		t.Fatalf("invalid profile error = %v; want %v", err, ErrInvalidInput)
+	}
+}
+
+func TestTrainerProfileUsesFirebaseIdentityWhenNoProfileIsSaved(t *testing.T) {
+	service := NewService(&fakeStore{membership: Membership{OrganizationID: "organization-a", Role: "owner", Active: true}})
+	profile, err := service.CurrentTrainerProfile(context.Background(), authn.Identity{UID: "trainer-a", Name: "Avery Trainer", Email: "google@example.com"})
+	if err != nil || profile.Name != "Avery Trainer" || profile.Email != "google@example.com" {
+		t.Fatalf("profile = %#v, err = %v", profile, err)
 	}
 }
 

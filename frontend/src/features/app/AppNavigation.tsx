@@ -34,7 +34,7 @@ function navigationClass(isActive: boolean) {
   )
 }
 
-export function DesktopSidebar({ email, onSignOut }: { email: string; onSignOut: () => void }) {
+export function DesktopSidebar({ email, name, onSignOut }: { email: string; name: string; onSignOut: () => void }) {
   return <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar p-4 lg:flex" aria-label="Product navigation">
     <ProductBrand />
     <nav className="mt-12 grid gap-1" aria-label="Primary product navigation">
@@ -46,17 +46,18 @@ export function DesktopSidebar({ email, onSignOut }: { email: string; onSignOut:
       <NavLink className={({ isActive }) => navigationClass(isActive)} to="/settings"><Settings className="size-5" aria-hidden="true" />Settings</NavLink>
       <Button className="min-h-11 justify-start text-muted-foreground hover:text-sidebar-foreground" onClick={onSignOut} type="button" variant="ghost"><LogOut className="size-5" aria-hidden="true" />Sign out</Button>
       <div className="flex min-h-14 items-center gap-3 rounded-xl border border-sidebar-border px-3">
-        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground" aria-hidden="true">{email.slice(0, 1).toUpperCase() || 'T'}</span>
-        <p className="min-w-0 truncate text-xs text-muted-foreground" title={email}>{email || 'Trainer'}</p>
+        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground" aria-hidden="true">{(name || email).slice(0, 1).toUpperCase() || 'T'}</span>
+        <div className="min-w-0"><p className="truncate text-sm font-medium text-sidebar-foreground" title={name}>{name || 'Trainer'}</p><p className="truncate text-xs text-muted-foreground" title={email}>{email}</p></div>
       </div>
     </div>
   </aside>
 }
 
-export function DesktopUtilityBar() {
+export function DesktopUtilityBar({ trainerName }: { trainerName: string }) {
   const navigate = useNavigate()
+  const firstName = trainerName.trim().split(/\s+/)[0]
   return <header className="hidden min-h-20 items-center justify-between border-b border-border px-10 lg:flex">
-    <p className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground"><Sparkles className="size-5 text-primary" aria-hidden="true" />Trainer workspace</p>
+    <p className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground"><Sparkles className="size-5 text-primary" aria-hidden="true" />{firstName ? `${firstName}'s workspace` : 'Trainer workspace'}</p>
     <div className="flex items-center gap-3"><ThemeToggle /><Button onClick={() => navigate('/schedule?book=1')} type="button"><Plus className="size-4" aria-hidden="true" />Book appointment</Button></div>
   </header>
 }

@@ -42,6 +42,18 @@ type Membership struct {
 	Active         bool
 }
 
+// TrainerProfile combines the Firebase-backed Google identity with the one
+// trainer-specific contact field that ShwayFit stores: a phone number.
+type TrainerProfile struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Phone string `json:"phone"`
+}
+
+type TrainerProfileInput struct {
+	Phone string `json:"phone"`
+}
+
 type Client struct {
 	ID                       string   `json:"id"`
 	FirstName                string   `json:"firstName"`
@@ -132,6 +144,8 @@ type AppointmentCompletion struct {
 type Store interface {
 	CreateFirstOrganization(context.Context, authn.Identity, string) (Organization, error)
 	CurrentMembership(context.Context, string) (Membership, error)
+	GetTrainerProfile(context.Context, string) (TrainerProfile, error)
+	UpdateTrainerProfile(context.Context, string, string, TrainerProfileInput) (TrainerProfile, error)
 	GetOrganization(context.Context, string) (Organization, error)
 	CreateClient(context.Context, string, string, ClientInput) (Client, error)
 	ListClients(context.Context, string) ([]Client, error)
@@ -297,6 +311,35 @@ func (s *Service) CurrentOrganization(ctx context.Context, identity authn.Identi
 	return s.store.GetOrganization(ctx, membership.OrganizationID)
 }
 
+func (s *Service) CurrentTrainerProfile(ctx context.Context, identity authn.Identity) (TrainerProfile, error) {
+	if _, err := s.activeMembership(ctx, identity.UID); err != nil {
+		return TrainerProfile{}, err
+	}
+	profile, err := s.store.GetTrainerProfile(ctx, identity.UID)
+	if err != nil {
+		return TrainerProfile{}, err
+	}
+	profile.Name, profile.Email = identity.Name, identity.Email
+	return profile, nil
+}
+
+func (s *Service) UpdateTrainerProfile(ctx context.Context, identity authn.Identity, input TrainerProfileInput) (TrainerProfile, error) {
+	if err := validateTrainerProfileInput(input); err != nil {
+		return TrainerProfile{}, err
+	}
+	membership, err := s.activeMembership(ctx, identity.UID)
+	if err != nil {
+		return TrainerProfile{}, err
+	}
+	input.Phone = strings.TrimSpace(input.Phone)
+	profile, err := s.store.UpdateTrainerProfile(ctx, membership.OrganizationID, identity.UID, input)
+	if err != nil {
+		return TrainerProfile{}, err
+	}
+	profile.Name, profile.Email = identity.Name, identity.Email
+	return profile, nil
+}
+
 func (s *Service) CreateClient(ctx context.Context, identity authn.Identity, input ClientInput) (Client, error) {
 	if err := validateClientInput(input); err != nil {
 		return Client{}, err
@@ -378,6 +421,13 @@ func (s *Service) activeMembership(ctx context.Context, uid string) (Membership,
 
 func validateOrganizationName(value string) error {
 	if !validLength(strings.TrimSpace(value), 2, 80) {
+		return ErrInvalidInput
+	}
+	return nil
+}
+
+func validateTrainerProfileInput(input TrainerProfileInput) error {
+	if !validPhone(input.Phone) {
 		return ErrInvalidInput
 	}
 	return nil

@@ -13,6 +13,26 @@ import (
 const maxRequestBodyBytes = 64 << 10
 
 func registerOrganizationRoutes(mux *http.ServeMux, verifier authn.Verifier, service *organization.Service) {
+	mux.Handle("GET /api/v1/organizations/current/trainer-profile", requireIdentity(verifier, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		profile, err := service.CurrentTrainerProfile(r.Context(), identityFromContext(r.Context()))
+		if err != nil {
+			writeOrganizationError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, profile)
+	})))
+	mux.Handle("PATCH /api/v1/organizations/current/trainer-profile", requireIdentity(verifier, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var input organization.TrainerProfileInput
+		if !decodeJSON(w, r, &input) {
+			return
+		}
+		profile, err := service.UpdateTrainerProfile(r.Context(), identityFromContext(r.Context()), input)
+		if err != nil {
+			writeOrganizationError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, profile)
+	})))
 	mux.Handle("POST /api/v1/organizations", requireIdentity(verifier, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
 			DisplayName string `json:"displayName"`

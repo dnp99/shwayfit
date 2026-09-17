@@ -1,6 +1,5 @@
 import { getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, type User } from 'firebase/auth'
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router'
 import { ThemeToggle } from '../../components/ThemeToggle'
 import { beginFirebaseAuthSession, configureFirebaseAuthPersistence, getFirebaseAuth, restoreFirebaseAuthSession } from '../../lib/firebase'
 
@@ -9,8 +8,6 @@ export function SignIn() {
   const [isSigningIn, setIsSigningIn] = useState(false)
   const [isCheckingRedirect, setIsCheckingRedirect] = useState(true)
   const [isTrustedDevice, setIsTrustedDevice] = useState(false)
-  const navigate = useNavigate()
-
   const completeSignIn = useCallback(async (user: User) => {
     const token = await user.getIdToken()
     const response = await fetch('/api/v1/me', {
@@ -21,8 +18,11 @@ export function SignIn() {
     }
     await response.json()
     beginFirebaseAuthSession()
-    navigate('/clients', { replace: true })
-  }, [navigate])
+    // Firebase's popup can resolve after the original React tree has started
+    // unmounting. A same-origin navigation makes the authenticated handoff
+    // reliable across popup and redirect flows.
+    window.location.replace('/clients')
+  }, [])
 
   useEffect(() => {
     let active = true

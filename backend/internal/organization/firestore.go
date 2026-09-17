@@ -67,6 +67,30 @@ func (s *FirestoreStore) CurrentMembership(ctx context.Context, uid string) (Mem
 	return Membership{OrganizationID: organizationID, Role: role, Active: active}, nil
 }
 
+func (s *FirestoreStore) GetTrainerProfile(ctx context.Context, uid string) (TrainerProfile, error) {
+	snapshot, err := s.client.Collection("trainerMemberships").Doc(uid).Get(ctx)
+	if status.Code(err) == codes.NotFound {
+		return TrainerProfile{}, ErrNoActiveMembership
+	}
+	if err != nil {
+		return TrainerProfile{}, err
+	}
+	data := snapshot.Data()
+	phone, _ := data["phone"].(string)
+	return TrainerProfile{Phone: phone}, nil
+}
+
+func (s *FirestoreStore) UpdateTrainerProfile(ctx context.Context, organizationID, uid string, input TrainerProfileInput) (TrainerProfile, error) {
+	data := map[string]any{"phone": input.Phone, "updatedAt": firestore.ServerTimestamp}
+	batch := s.client.Batch()
+	batch.Update(s.client.Collection("trainerMemberships").Doc(uid), toUpdates(data))
+	batch.Update(s.client.Collection("organizations").Doc(organizationID).Collection("members").Doc(uid), toUpdates(data))
+	if _, err := batch.Commit(ctx); err != nil {
+		return TrainerProfile{}, err
+	}
+	return TrainerProfile{Phone: input.Phone}, nil
+}
+
 func (s *FirestoreStore) GetOrganization(ctx context.Context, organizationID string) (Organization, error) {
 	snapshot, err := s.client.Collection("organizations").Doc(organizationID).Get(ctx)
 	if status.Code(err) == codes.NotFound {
