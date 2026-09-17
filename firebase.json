@@ -7,6 +7,17 @@
       "**/.*",
       "**/node_modules/**"
     ],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      }
+    ],
     "predeploy": [
       "npm --prefix frontend ci",
       "npm --prefix frontend run build"
