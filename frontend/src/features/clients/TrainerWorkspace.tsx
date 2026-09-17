@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { ChevronLeft } from 'lucide-react'
+import { CalendarDays, ChevronLeft, ClipboardList, Mail, Pencil, Phone, Plus } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router'
 import { api } from '../../lib/api'
 import { Button } from '../../components/ui/button'
@@ -14,6 +14,8 @@ import { ClientPackagePanel } from '../packages/ClientPackagePanel'
 type Organization = { id: string; displayName: string }
 type Client = { id: string; firstName: string; lastName: string; email?: string; phone?: string; goals?: string; notes?: string; preferredStartTime?: string; preferredEndTime?: string; status: 'active' | 'archived' }
 type ClientInput = Omit<Client, 'id'>
+type ContactErrors = Partial<Record<'email' | 'phone', string>>
+type Appointment = { id: string; clientId: string; startAt: string; durationMinutes: number; status: 'scheduled' | 'completed' }
 
 const emptyClient: ClientInput = { firstName: '', lastName: '', email: '', phone: '', goals: '', notes: '', preferredStartTime: '', preferredEndTime: '', status: 'active' }
 // The shell owns this label on desktop; the page keeps it on mobile where the
@@ -24,6 +26,29 @@ function clientInitials(client: Pick<Client, 'firstName' | 'lastName'>) {
   return `${client.firstName.slice(0, 1)}${client.lastName.slice(0, 1)}`.toUpperCase()
 }
 
+function clientInputFromForm(form: HTMLFormElement): ClientInput {
+  const data = new FormData(form)
+  return {
+    firstName: String(data.get('firstName') ?? ''), lastName: String(data.get('lastName') ?? ''), email: String(data.get('email') ?? ''),
+    phone: String(data.get('phone') ?? ''), goals: String(data.get('goals') ?? ''), notes: String(data.get('notes') ?? ''),
+    preferredStartTime: String(data.get('preferredStartTime') ?? ''), preferredEndTime: String(data.get('preferredEndTime') ?? ''), status: String(data.get('status') ?? 'active') as ClientInput['status'],
+  }
+}
+
+function isSameClientInput(first: ClientInput, second: ClientInput) {
+  return first.firstName === second.firstName && first.lastName === second.lastName && first.email === second.email && first.phone === second.phone && first.goals === second.goals && first.notes === second.notes && first.preferredStartTime === second.preferredStartTime && first.preferredEndTime === second.preferredEndTime && first.status === second.status
+}
+
+function contactErrors(input: ClientInput): ContactErrors {
+  const errors: ContactErrors = {}
+  const email = input.email?.trim() ?? ''
+  const phone = input.phone?.trim() ?? ''
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'Enter a valid email address.'
+  const digitCount = (phone.match(/\d/g) ?? []).length
+  if (phone && (!/^[0-9+(). -]+$/.test(phone) || digitCount < 7 || digitCount > 15)) errors.phone = 'Enter a valid phone number with 7–15 digits.'
+  return errors
+}
+
 export function TrainerWorkspace({ email }: { email: string }) {
   const { pathname } = useLocation()
   const navigate = useNavigate()
@@ -31,10 +56,11 @@ export function TrainerWorkspace({ email }: { email: string }) {
   const [clients, setClients] = useState<Client[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const clientPathSegment = pathname.split('/')[2]
+  const [, , clientPathSegment, clientAction] = pathname.split('/')
   const isNewClient = clientPathSegment === 'new'
+  const isEditingClient = clientAction === 'edit'
   const selectedClient = clientPathSegment && !isNewClient ? clients.find((client) => client.id === clientPathSegment) ?? null : null
-  const isEditorOpen = isNewClient || Boolean(selectedClient)
+  const isEditorOpen = isNewClient || (Boolean(selectedClient) && isEditingClient)
 
   async function loadWorkspace() {
 	try {
@@ -63,29 +89,27 @@ export function TrainerWorkspace({ email }: { email: string }) {
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'ShwayFit could not create your organization.') }
   }
 
-  async function saveClient(event: FormEvent<HTMLFormElement>) {
+  async function saveClient(event: FormEvent<HTMLFormElement>): Promise<boolean> {
     event.preventDefault()
     // React clears currentTarget after an awaited operation. Keep the form so a
     // successful new-client submission can reset it without reporting an error.
     const form = event.currentTarget
-    const data = new FormData(form)
-    const input: ClientInput = {
-      firstName: String(data.get('firstName') ?? ''), lastName: String(data.get('lastName') ?? ''), email: String(data.get('email') ?? ''),
-      phone: String(data.get('phone') ?? ''), goals: String(data.get('goals') ?? ''), notes: String(data.get('notes') ?? ''),
-      preferredStartTime: String(data.get('preferredStartTime') ?? ''), preferredEndTime: String(data.get('preferredEndTime') ?? ''), status: String(data.get('status') ?? 'active') as ClientInput['status'],
-    }
+    const input = clientInputFromForm(form)
     if ((input.preferredStartTime || input.preferredEndTime) && (!input.preferredStartTime || !input.preferredEndTime || input.preferredStartTime >= input.preferredEndTime)) {
       setError('Enter both preferred times, with an end time after the start time.')
-      return
+      return false
     }
     try {
       setError(null)
       const path = selectedClient ? `/api/v1/organizations/current/clients/${selectedClient.id}` : '/api/v1/organizations/current/clients'
       const client = await api(path, { method: selectedClient ? 'PATCH' : 'POST', body: JSON.stringify(input) }) as Client
       setClients((current) => selectedClient ? current.map((item) => item.id === client.id ? client : item) : [...current, client].sort((a, b) => a.lastName.localeCompare(b.lastName)))
-      navigate('/clients', { replace: true })
-      form.reset()
-    } catch (caught) { setError(caught instanceof Error ? caught.message : 'ShwayFit could not save this client.') }
+      navigate(`/clients/${client.id}`, { replace: true })
+      return true
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'ShwayFit could not save this client.')
+      return false
+    }
   }
 
   if (isLoading) return <section className="flex min-h-screen items-center justify-center bg-background p-5 text-muted-foreground"><p>Preparing your workspace…</p></section>
@@ -93,30 +117,94 @@ export function TrainerWorkspace({ email }: { email: string }) {
   return <section className="text-foreground">
     {error && <p className="mt-4 text-sm text-destructive" role="alert">{error}</p>}
     {isEditorOpen
-      ? <ClientEditorPage client={selectedClient} error={error} onBack={() => navigate('/clients')} onSubmit={saveClient} />
-      : <ClientDirectory clients={clients} selectedClientID={selectedClient?.id} onAdd={() => { setError(null); navigate('/clients/new') }} onSelect={(clientID) => { setError(null); navigate(`/clients/${clientID}`) }} />}
+      ? <ClientEditorPage client={selectedClient} error={error} onBack={() => navigate(selectedClient ? `/clients/${selectedClient.id}` : '/clients')} onSubmit={saveClient} />
+      : selectedClient
+        ? <ClientDetailPage client={selectedClient} onBack={() => navigate('/clients')} onBook={() => navigate(`/schedule?book=1&client=${encodeURIComponent(selectedClient.id)}`)} onEdit={() => navigate(`/clients/${selectedClient.id}/edit`)} />
+      : <ClientDirectory clients={clients} onAdd={() => { setError(null); navigate('/clients/new') }} onSelect={(clientID) => { setError(null); navigate(`/clients/${clientID}`) }} />}
   </section>
 }
 
-function ClientEditorPage({ client, error, onBack, onSubmit }: { client: Client | null; error: string | null; onBack: () => void; onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void> }) {
-  const formValues = client ?? emptyClient
+function ClientDetailPage({ client, onBack, onBook, onEdit }: { client: Client; onBack: () => void; onBook: () => void; onEdit: () => void }) {
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [isLoadingAppointments, setIsLoadingAppointments] = useState(true)
+  const appointmentWindow = useRef({ from: new Date(new Date().getFullYear() - 1, 0, 1), to: new Date(new Date().getFullYear() + 2, 0, 1) }).current
+
+  useEffect(() => {
+    let current = true
+    void api(`/api/v1/organizations/current/appointments?from=${encodeURIComponent(appointmentWindow.from.toISOString())}&to=${encodeURIComponent(appointmentWindow.to.toISOString())}`)
+      .then((result) => { if (current) setAppointments((result as { appointments: Appointment[] }).appointments.filter((appointment) => appointment.clientId === client.id)) })
+      .catch(() => { if (current) setAppointments([]) })
+      .finally(() => { if (current) setIsLoadingAppointments(false) })
+    return () => { current = false }
+  }, [appointmentWindow, client.id])
+
+  const dateFormatter = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+  const timeFormatter = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' })
+  const appointmentHistory = [...appointments].sort((first, second) => new Date(second.startAt).getTime() - new Date(first.startAt).getTime())
+
+  return <section aria-labelledby="client-detail-heading">
+    <Button className="-ml-2 min-h-11 px-2 text-foreground hover:bg-accent active:bg-accent" onClick={onBack} type="button" variant="ghost"><ChevronLeft aria-hidden="true" className="size-4 text-primary" />Back to clients</Button>
+    <header className="mt-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex items-center gap-4"><span className="grid size-20 shrink-0 place-items-center rounded-full bg-secondary text-xl font-semibold text-secondary-foreground" aria-hidden="true">{clientInitials(client)}</span><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h1 className="text-3xl font-semibold tracking-tight sm:text-4xl" id="client-detail-heading">{client.firstName} {client.lastName}</h1><span className={client.status === 'active' ? 'rounded-full bg-success/10 px-2.5 py-1 text-sm font-medium text-success' : 'rounded-full bg-muted px-2.5 py-1 text-sm font-medium text-muted-foreground'}>{client.status === 'active' ? 'Active' : 'Archived'}</span></div><p className="mt-2 max-w-2xl text-base text-muted-foreground">{client.goals || 'No training goals recorded yet.'}</p></div></div>
+      <div className="flex flex-wrap gap-2"><Button onClick={onEdit} type="button" variant="outline"><Pencil aria-hidden="true" className="size-4" />Edit client</Button><Button disabled={client.status !== 'active'} onClick={onBook} type="button"><Plus aria-hidden="true" className="size-4" />Book session</Button></div>
+    </header>
+    <div className="mt-8 grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+      <div className="grid gap-5"><section className="rounded-xl border border-border bg-card p-5 sm:p-6" aria-labelledby="training-focus-heading"><div className="flex items-center justify-between gap-3"><h2 className="text-xl font-semibold tracking-tight" id="training-focus-heading">Training focus</h2><Button onClick={onEdit} size="sm" type="button" variant="outline">Edit details</Button></div><div className="mt-5 flex gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-lg bg-secondary text-secondary-foreground"><ClipboardList aria-hidden="true" className="size-5" /></span><p className="leading-7 text-muted-foreground">{client.goals || 'Add goals to give this client’s training a clear focus.'}</p></div></section>
+        <section className="rounded-xl border border-border bg-card p-5 sm:p-6" aria-labelledby="appointment-history-heading"><div className="flex items-center gap-2"><CalendarDays aria-hidden="true" className="size-5 text-primary" /><h2 className="text-xl font-semibold tracking-tight" id="appointment-history-heading">Appointment history</h2></div>{isLoadingAppointments ? <p className="mt-5 text-sm text-muted-foreground">Loading appointments…</p> : appointmentHistory.length === 0 ? <p className="mt-5 text-sm leading-6 text-muted-foreground">No appointments have been booked for this client.</p> : <ol className="mt-5 divide-y divide-border">{appointmentHistory.map((appointment) => <li className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0" key={appointment.id}><div><p className="font-medium">{appointment.status === 'completed' ? 'Completed session' : 'Scheduled session'}</p><p className="mt-1 text-sm text-muted-foreground">{dateFormatter.format(new Date(appointment.startAt))} · {timeFormatter.format(new Date(appointment.startAt))} · {appointment.durationMinutes} min</p></div><span className={appointment.status === 'completed' ? 'rounded-full bg-success/10 px-2 py-1 text-xs font-medium text-success' : 'rounded-full bg-info/10 px-2 py-1 text-xs font-medium text-info'}>{appointment.status === 'completed' ? 'Completed' : 'Upcoming'}</span></li>)}</ol>}</section></div>
+      <aside className="grid gap-5"><ClientPackagePanel clientID={client.id} clientName={`${client.firstName} ${client.lastName}`} /><section className="rounded-xl border border-border bg-card p-5 sm:p-6" aria-labelledby="contact-details-heading"><div className="flex items-center justify-between gap-3"><h2 className="text-xl font-semibold tracking-tight" id="contact-details-heading">Contact details</h2><Button onClick={onEdit} size="sm" type="button" variant="outline">Edit</Button></div><dl className="mt-5 grid gap-4 text-sm"><div className="flex items-start gap-3"><Mail aria-hidden="true" className="mt-0.5 size-4 text-muted-foreground" /><div><dt className="text-muted-foreground">Email</dt><dd className="mt-1 font-medium">{client.email || 'Not recorded'}</dd></div></div><div className="flex items-start gap-3"><Phone aria-hidden="true" className="mt-0.5 size-4 text-muted-foreground" /><div><dt className="text-muted-foreground">Phone</dt><dd className="mt-1 font-medium">{client.phone || 'Not recorded'}</dd></div></div>{client.preferredStartTime && client.preferredEndTime && <div><dt className="text-muted-foreground">Preferred time</dt><dd className="mt-1 font-medium">{client.preferredStartTime}–{client.preferredEndTime}</dd></div>}</dl></section></aside>
+    </div>
+  </section>
+}
+
+function ClientEditorPage({ client, error, onBack, onSubmit }: { client: Client | null; error: string | null; onBack: () => void; onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<boolean> }) {
+  const formValues: ClientInput = client ? { ...emptyClient, ...client } : emptyClient
   const isEditing = Boolean(client)
+  const formRef = useRef<HTMLFormElement>(null)
+  const [isDirty, setIsDirty] = useState(false)
+  const [contactErrorsByField, setContactErrorsByField] = useState<ContactErrors>({})
+
+  function checkDirty() {
+    if (formRef.current) setIsDirty(!isSameClientInput(clientInputFromForm(formRef.current), formValues))
+  }
+
+  function cancelChanges() {
+    formRef.current?.reset()
+    setIsDirty(false)
+    setContactErrorsByField({})
+  }
+
+  function validateContactField(field: keyof ContactErrors) {
+    if (!formRef.current) return
+    const errors = contactErrors(clientInputFromForm(formRef.current))
+    setContactErrorsByField((current) => ({ ...current, [field]: errors[field] }))
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const errors = contactErrors(clientInputFromForm(event.currentTarget))
+    setContactErrorsByField(errors)
+    if (Object.keys(errors).length > 0) {
+      event.preventDefault()
+      return
+    }
+    if (await onSubmit(event)) setIsDirty(false)
+  }
 
   return <section aria-labelledby="client-editor-heading">
     <Button className="-ml-2 min-h-11 px-2 text-foreground hover:bg-accent active:bg-accent" onClick={onBack} type="button" variant="ghost"><ChevronLeft className="size-4 text-primary" aria-hidden="true" />Back to clients</Button>
     <header className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       {client ? <div className="flex items-center gap-3"><span className="grid size-14 shrink-0 place-items-center rounded-full bg-secondary text-sm font-semibold text-secondary-foreground" aria-hidden="true">{clientInitials(client)}</span><div className="min-w-0"><p className="text-xs font-semibold tracking-[0.175em] text-secondary-foreground">CLIENT DETAILS</p><div className="mt-1 flex flex-wrap items-center gap-2"><h1 id="client-editor-heading" className="text-3xl font-semibold tracking-tight sm:text-4xl">{client.firstName} {client.lastName}</h1><span className={client.status === 'active' ? 'rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success' : 'rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground'}>{client.status === 'active' ? 'Active' : 'Archived'}</span></div><p className="mt-1 truncate text-muted-foreground">{client.goals || 'No training goals yet'}</p></div></div> : <div><p className="text-xs font-semibold tracking-[0.175em] text-secondary-foreground">CLIENT DETAILS</p><h1 id="client-editor-heading" className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">Add a client</h1><p className="mt-2 text-muted-foreground">Add the details you need to begin managing this client.</p></div>}
     </header>
-    <form className="mt-8 grid gap-6" key={client?.id ?? 'new'} onSubmit={(event) => void onSubmit(event)}>
+    <form className={`mt-8 grid gap-6 ${isDirty ? 'pb-32 lg:pb-24' : 'pb-4 sm:pb-6'}`} key={client?.id ?? 'new'} onChange={checkDirty} onSubmit={submit} ref={formRef}>
       {error && <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">{error}</p>}
       <section className="rounded-xl border border-border bg-card p-4 sm:p-6" aria-labelledby="client-profile-heading">
         <div><h2 id="client-profile-heading" className="text-lg font-semibold">Profile</h2><p className="mt-1 text-sm text-muted-foreground">Contact information and training context.</p></div>
-        <div className="mt-5 grid gap-4 sm:grid-cols-2"><Label className="grid gap-2">First name<Input required maxLength={80} name="firstName" defaultValue={formValues.firstName} /></Label><Label className="grid gap-2">Last name<Input required maxLength={80} name="lastName" defaultValue={formValues.lastName} /></Label><Label className="grid gap-2">Email <span className="text-xs font-normal text-muted-foreground">optional</span><Input type="email" maxLength={254} name="email" defaultValue={formValues.email} /></Label><Label className="grid gap-2">Phone <span className="text-xs font-normal text-muted-foreground">optional</span><Input maxLength={40} name="phone" defaultValue={formValues.phone} /></Label></div>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2"><Label className="grid gap-2">First name<Input required maxLength={80} name="firstName" defaultValue={formValues.firstName} /></Label><Label className="grid gap-2">Last name<Input required maxLength={80} name="lastName" defaultValue={formValues.lastName} /></Label><Label className="grid gap-2">Email <span className="text-xs font-normal text-muted-foreground">optional</span><Input aria-describedby={contactErrorsByField.email ? 'client-email-error' : undefined} aria-invalid={Boolean(contactErrorsByField.email)} maxLength={254} name="email" defaultValue={formValues.email} onBlur={() => validateContactField('email')} type="email" />{contactErrorsByField.email && <span className="text-sm font-normal text-destructive" id="client-email-error">{contactErrorsByField.email}</span>}</Label><Label className="grid gap-2">Phone <span className="text-xs font-normal text-muted-foreground">optional</span><Input aria-describedby={contactErrorsByField.phone ? 'client-phone-error' : undefined} aria-invalid={Boolean(contactErrorsByField.phone)} inputMode="tel" maxLength={40} name="phone" defaultValue={formValues.phone} onBlur={() => validateContactField('phone')} type="tel" />{contactErrorsByField.phone && <span className="text-sm font-normal text-destructive" id="client-phone-error">{contactErrorsByField.phone}</span>}</Label></div>
       </section>
       <section className="rounded-xl border border-border bg-muted/30 p-4 sm:p-6" aria-labelledby="scheduling-preference-heading"><h2 id="scheduling-preference-heading" className="text-lg font-semibold">Scheduling preference</h2><p className="mt-1 text-sm text-muted-foreground">A preferred time window helps with planning. It does not book a session.</p><div className="mt-5 grid gap-4 sm:grid-cols-2"><Label className="grid gap-2">Preferred start <span className="text-xs font-normal text-muted-foreground">optional</span><Input type="time" name="preferredStartTime" defaultValue={formValues.preferredStartTime} /></Label><Label className="grid gap-2">Preferred end <span className="text-xs font-normal text-muted-foreground">optional</span><Input type="time" name="preferredEndTime" defaultValue={formValues.preferredEndTime} /></Label></div></section>
       <section className="rounded-xl border border-border bg-card p-4 sm:p-6" aria-labelledby="training-context-heading"><h2 id="training-context-heading" className="text-lg font-semibold">Training context</h2><div className="mt-5 grid gap-4"><Label className="grid gap-2">Training goals <span className="text-xs font-normal text-muted-foreground">optional</span><Textarea maxLength={2000} name="goals" defaultValue={formValues.goals} /></Label><Label className="grid gap-2">Private notes <span className="text-xs font-normal text-muted-foreground">optional</span><Textarea maxLength={4000} name="notes" defaultValue={formValues.notes} /></Label><Label className="grid max-w-52 gap-2">Client status<select className="min-h-11 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring" name="status" defaultValue={formValues.status}><option value="active">Active</option><option value="archived">Archived</option></select></Label></div></section>
       {client && <ClientPackagePanel clientID={client.id} clientName={`${client.firstName} ${client.lastName}`} />}
-      <footer className="flex flex-col-reverse gap-2 border-t border-border pt-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end"><Button className="min-h-11 w-full sm:w-auto" onClick={onBack} type="button" variant="outline">Cancel</Button><Button className="min-h-11 w-full sm:w-auto" type="submit">{isEditing ? 'Save changes' : 'Add client'}</Button></footer>
+      {isDirty && <footer className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 border-t border-border bg-card/95 px-4 py-3 backdrop-blur sm:px-6 lg:left-64 lg:bottom-0 lg:px-10" aria-label="Unsaved client changes"><div className="mx-auto flex w-full max-w-7xl flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button className="min-h-11 w-full sm:w-auto" onClick={cancelChanges} type="button" variant="outline">Cancel</Button><Button className="min-h-11 w-full sm:w-auto" type="submit">{isEditing ? 'Save changes' : 'Add client'}</Button></div></footer>}
     </form>
   </section>
 }

@@ -127,6 +127,30 @@ func TestClientInputValidatesPreferredTimeWindow(t *testing.T) {
 	}
 }
 
+func TestClientInputValidatesOptionalContactDetails(t *testing.T) {
+	valid := ClientInput{FirstName: "Avery", LastName: "Sample", Status: "active"}
+	for _, test := range []struct {
+		name  string
+		email string
+		phone string
+		want  error
+	}{
+		{name: "omitted", want: nil},
+		{name: "valid", email: "avery@example.com", phone: "+1 (416) 555-0123", want: nil},
+		{name: "invalid email", email: "avery.example.com", want: ErrInvalidInput},
+		{name: "phone letters", phone: "call Avery", want: ErrInvalidInput},
+		{name: "phone too short", phone: "555-123", want: ErrInvalidInput},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			input := valid
+			input.Email, input.Phone = test.email, test.phone
+			if err := validateClientInput(input); err != test.want {
+				t.Fatalf("validateClientInput() = %v, want %v", err, test.want)
+			}
+		})
+	}
+}
+
 func TestPackageOptionAllowsActiveTrainerMembership(t *testing.T) {
 	service := NewService(&fakeStore{membership: Membership{OrganizationID: "organization-a", Role: "trainer", Active: true}})
 	option, err := service.CreatePackageOption(context.Background(), authn.Identity{UID: "trainer-a"}, PackageOptionInput{Name: "Five sessions", IncludedSessions: 5})

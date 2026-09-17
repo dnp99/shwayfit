@@ -379,7 +379,7 @@ func validateClientInput(input ClientInput) error {
 	if !validLength(strings.TrimSpace(input.FirstName), 1, 80) || !validLength(strings.TrimSpace(input.LastName), 1, 80) {
 		return ErrInvalidInput
 	}
-	if !optionalLength(input.Phone, 40) || !optionalLength(input.Goals, 2000) || !optionalLength(input.Notes, 4000) {
+	if !validPhone(input.Phone) || !optionalLength(input.Goals, 2000) || !optionalLength(input.Notes, 4000) {
 		return ErrInvalidInput
 	}
 	if input.Status != "active" && input.Status != "archived" {
@@ -388,9 +388,9 @@ func validateClientInput(input ClientInput) error {
 	if !validTimeWindow(input.PreferredStartTime, input.PreferredEndTime) {
 		return ErrInvalidInput
 	}
-	if input.Email != "" {
-		address, err := mail.ParseAddress(input.Email)
-		if err != nil || address.Address != input.Email || !optionalLength(input.Email, 254) {
+	if email := strings.TrimSpace(input.Email); email != "" {
+		address, err := mail.ParseAddress(email)
+		if err != nil || address.Address != email || !optionalLength(email, 254) {
 			return ErrInvalidInput
 		}
 	}
@@ -422,6 +422,27 @@ func hasRemainingPackageSession(packages []ClientPackage) bool {
 
 func validIdempotencyKey(value string) bool {
 	return validLength(value, 8, 200)
+}
+
+var phonePattern = regexp.MustCompile(`^[0-9+(). -]+$`)
+
+// Phone numbers remain stored as trainer-entered display text, but rejecting
+// letters and impossible digit lengths prevents unusable contact records.
+func validPhone(value string) bool {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return true
+	}
+	if !validLength(value, 7, 40) || !phonePattern.MatchString(value) {
+		return false
+	}
+	digits := 0
+	for _, character := range value {
+		if character >= '0' && character <= '9' {
+			digits++
+		}
+	}
+	return digits >= 7 && digits <= 15
 }
 
 func normalizeClientInput(input ClientInput) ClientInput {
