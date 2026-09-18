@@ -23,6 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -41,7 +43,11 @@ jobs:
         id: backend_changes
         shell: bash
         run: |
-          if git diff --quiet "${{ github.event.before }}" "${{ github.sha }}" -- backend; then
+          BEFORE="${{ github.event.before }}"
+          if [[ "$BEFORE" =~ ^0+$ ]] || ! git cat-file -e "$BEFORE" 2>/dev/null; then
+            echo "::warning::Could not resolve previous commit ($BEFORE); treating as changed."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          elif git diff --quiet "$BEFORE" "${{ github.sha }}" -- backend; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No backend changes detected; skipping Cloud Run deployment."
           else
